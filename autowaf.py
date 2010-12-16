@@ -4,14 +4,16 @@
 # Copyright (C) 2008 David Robillard
 # Copyright (C) 2008 Nedko Arnaudov
 
-import Configure
-import Options
-import Utils
 import misc
 import os
 import subprocess
 import sys
+
+import Configure
+import Logs
+import Options
 from TaskGen import feature, before, after
+from waflib import Context
 
 global g_is_child
 g_is_child = False
@@ -24,11 +26,10 @@ g_step = 0
 #import preproc
 #preproc.go_absolute = True
 
-@feature('cc', 'cxx')
-@after('apply_lib_vars')
-@before('apply_obj_vars_cc', 'apply_obj_vars_cxx')
+@feature('c', 'cxx')
+@after('apply_incpaths')
 def include_config_h(self):
-	self.env.append_value('INC_PATHS', self.bld.srcnode)
+	self.env.append_value('INCPATHS', self.bld.bldnode.abspath())
 
 def set_options(opt):
 	"Add standard autowaf options if they havn't been added yet"
@@ -81,12 +82,16 @@ def check_header(conf, name, define='', mandatory=False):
 		if sys.platform == "darwin":
 			includes = '/opt/local/include'
 		if define != '':
-			conf.check(header_name=name, includes=includes, define_name=define, mandatory=mandatory)
+			conf.check_cxx(header_name=name, includes=includes, define_name=define, mandatory=mandatory, auto_add_header_name=True)
 		else:
-			conf.check(header_name=name, includes=includes, mandatory=mandatory)
+			conf.check_cxx(header_name=name, includes=includes, mandatory=mandatory, auto_add_header_name=True)
 
 def nameify(name):
 	return name.replace('/', '_').replace('++', 'PP').replace('-', '_').replace('.', '_')
+
+def define(conf, var_name, value):
+	conf.define(var_name, value)
+	conf.env[var_name] = value
 
 def check_pkg(conf, name, **args):
 	if not 'mandatory' in args:
@@ -103,20 +108,23 @@ def check_pkg(conf, name, **args):
 		conf.check_cfg(package=name, args="--cflags --libs", **args)
 		found = bool(conf.env[var_name])
 		if found:
-			conf.define(var_name, int(found))
+			define(conf, var_name, int(found))
 			if 'atleast_version' in args:
 				conf.env['VERSION_' + name] = args['atleast_version']
 		else:
+			print "!!!!!!!!!!!!!!!!!!!! UNDEFINE ", var_name
 			conf.undefine(var_name)
 			if args['mandatory'] == True:
 				conf.fatal("Required package " + name + " not found")
+
+	define(conf, var_name, 1)
 
 def configure(conf):
 	global g_step
 	if g_step > 1:
 		return
 	def append_cxx_flags(vals):
-		conf.env.append_value('CCFLAGS', vals.split())
+		conf.env.append_value('CFLAGS', vals.split())
 		conf.env.append_value('CXXFLAGS', vals.split())
 	display_header('Global Configuration')
 	conf.check_tool('misc')
@@ -128,7 +136,7 @@ def configure(conf):
 	conf.env['PREFIX'] = os.path.abspath(os.path.expanduser(os.path.normpath(conf.env['PREFIX'])))
 	if Options.options.bundle:
 		conf.env['BUNDLE'] = True
-		conf.define('BUNDLE', 1)
+		define(conf, 'BUNDLE', 1)
 		conf.env['BINDIR'] = conf.env['PREFIX']
 		conf.env['INCLUDEDIR'] = os.path.join(conf.env['PREFIX'], 'Headers')
 		conf.env['LIBDIR'] = os.path.join(conf.env['PREFIX'], 'Libraries')
@@ -161,7 +169,7 @@ def configure(conf):
 		if Options.options.htmldir:
 			conf.env['HTMLDIR'] = Options.options.htmldir
 		else:
-			conf.env['HTMLDIR'] = os.path.join(conf.env['DATADIR'], 'doc', Utils.g_module.APPNAME)
+			conf.env['HTMLDIR'] = os.path.join(conf.env['DATADIR'], 'doc', Context.g_module.APPNAME)
 		if Options.options.mandir:
 			conf.env['MANDIR'] = Options.options.mandir
 		else:
@@ -179,7 +187,7 @@ def configure(conf):
 					conf.env['LV2DIR'] = '/Library/Audio/Plug-Ins/LV2'
 				else:
 					conf.env['LV2DIR'] = os.path.join(conf.env['LIBDIR'], 'lv2')
-		
+
 	conf.env['BINDIRNAME'] = os.path.basename(conf.env['BINDIR'])
 	conf.env['LIBDIRNAME'] = os.path.basename(conf.env['LIBDIR'])
 	conf.env['DATADIRNAME'] = os.path.basename(conf.env['DATADIR'])
@@ -194,15 +202,15 @@ def configure(conf):
 		dot = conf.find_program('dot')
 		if not dot:
 			conf.fatal("Graphviz (dot) is required to build documentation, configure without --docs")
-		
+
 	if Options.options.debug:
-		conf.env['CCFLAGS'] = [ '-O0', '-g' ]
+		conf.env['CFLAGS'] = [ '-O0', '-g' ]
 		conf.env['CXXFLAGS'] = [ '-O0',  '-g' ]
 	else:
 		append_cxx_flags('-DNDEBUG')
 
 	if Options.options.strict:
-		conf.env.append_value('CCFLAGS', [ '-std=c99', '-pedantic' ])
+		conf.env.append_value('CFLAGS', [ '-std=c99', '-pedantic' ])
 		conf.env.append_value('CXXFLAGS', [ '-ansi', '-Woverloaded-virtual', '-Wnon-virtual-dtor'])
 		append_cxx_flags('-Wall -Wextra -Wno-unused-parameter')
 
@@ -215,9 +223,10 @@ def configure(conf):
 	print
 
 	g_step = 2
-	
+
 def set_local_lib(conf, name, has_objects):
-	conf.define('HAVE_' + nameify(name.upper()), 1)
+	var_name = 'HAVE_' + nameify(name.upper())
+	define(conf, var_name, 1)
 	if has_objects:
 		if type(conf.env['AUTOWAF_LOCAL_LIBS']) != dict:
 			conf.env['AUTOWAF_LOCAL_LIBS'] = {}
@@ -234,14 +243,14 @@ def use_lib(bld, obj, libs):
 		in_headers = l.lower() in bld.env['AUTOWAF_LOCAL_HEADERS']
 		in_libs    = l.lower() in bld.env['AUTOWAF_LOCAL_LIBS']
 		if in_libs:
-			if hasattr(obj, 'uselib_local'):
-				obj.uselib_local += ' lib' + l.lower() + ' '
+			if hasattr(obj, 'use'):
+				obj.use += ' lib' + l.lower() + ' '
 			else:
-				obj.uselib_local = 'lib' + l.lower() + ' '
-		
+				obj.use = 'lib' + l.lower() + ' '
+
 		if in_headers or in_libs:
 			inc_flag = '-iquote ' + os.path.join(abssrcdir, l.lower())
-			for f in ['CCFLAGS', 'CXXFLAGS']:
+			for f in ['CFLAGS', 'CXXFLAGS']:
 				if not inc_flag in bld.env[f]:
 					bld.env.append_value(f, inc_flag)
 		else:
@@ -250,9 +259,8 @@ def use_lib(bld, obj, libs):
 			else:
 				obj.uselib = l
 
-
 def display_header(title):
-	Utils.pprint('BOLD', title)
+	Logs.pprint('BOLD', title)
 
 def display_msg(conf, msg, status = None, color = None):
 	color = 'CYAN'
@@ -260,8 +268,8 @@ def display_msg(conf, msg, status = None, color = None):
 		color = 'GREEN'
 	elif type(status) == bool and not status or status == "False":
 		color = 'YELLOW'
-	Utils.pprint('BOLD', "%s :" % msg.ljust(conf.line_just), sep='')
-	Utils.pprint(color, status)
+	Logs.pprint('BOLD', "%s :" % msg.ljust(conf.line_just), sep='')
+	Logs.pprint(color, status)
 
 def link_flags(env, lib):
 	return ' '.join(map(lambda x: env['LIB_ST'] % x, env['LIB_' + lib]))
@@ -289,21 +297,28 @@ def build_pc(bld, name, version, libs):
 	obj.source       = name.lower() + '.pc.in'
 	obj.target       = name.lower() + '.pc'
 	obj.install_path = '${PREFIX}/${LIBDIRNAME}/pkgconfig'
-	pkg_prefix       = bld.env['PREFIX'] 
+	pkg_prefix       = bld.env['PREFIX']
+	obj.exec_prefix = '${prefix}'
 	if pkg_prefix[-1] == '/':
 		pkg_prefix = pkg_prefix[:-1]
-	obj.dict = {
-		'prefix'           : pkg_prefix,
-		'exec_prefix'      : '${prefix}',
-		'libdir'           : '${prefix}/' + bld.env['LIBDIRNAME'],
-		'includedir'       : '${prefix}/include',
-		name + '_VERSION'  : version,
-	}
+	obj.PREFIX           = pkg_prefix
+	obj.EXEC_PREFIX      = '${prefix}'
+	obj.LIBDIR           = '${prefix}/' + bld.env['LIBDIRNAME']
+	obj.INCLUDEDIR       = '${prefix}/include'
+	setattr(obj, name + '_VERSION', version)
 	if type(libs) != list:
 		libs = libs.split()
+
+
+	subst_dict = {}
 	for i in libs:
-		obj.dict[i + '_LIBS']   = link_flags(bld.env, i)
-		obj.dict[i + '_CFLAGS'] = compile_flags(bld.env, i)
+		subst_dict[i + '_LIBS']   = link_flags(bld.env, i)
+		lib_cflags = compile_flags(bld.env, i)
+		if lib_cflags == '':
+			lib_cflags = ' '
+		subst_dict[i + '_CFLAGS'] = lib_cflags
+
+	obj.__dict__.update(subst_dict)
 
 # Doxygen API documentation
 def build_dox(bld, name, version, srcdir, blddir):
@@ -361,7 +376,7 @@ def build_version_files(header_path, source_path, domain, major, minor, micro):
 	except IOError:
 		print "Could not open", header_path, " for writing\n"
 		sys.exit(-1)
-		
+
 	return None
 
 def run_tests(ctx, appname, tests):
@@ -390,12 +405,12 @@ def run_tests(ctx, appname, tests):
 	# Run all tests
 	for i in tests:
 		print
-		Utils.pprint('BOLD', 'Running %s test %s' % (appname, i))
+		Logs.pprint('BOLD', 'Running %s test %s' % (appname, i))
 		if subprocess.call(i) == 0:
-			Utils.pprint('GREEN', 'Passed %s %s' % (appname, i))
+			Logs.pprint('GREEN', 'Passed %s %s' % (appname, i))
 		else:
 			failures += 1
-			Utils.pprint('RED', 'Failed %s %s' % (appname, i))
+			Logs.pprint('RED', 'Failed %s %s' % (appname, i))
 
 	if lcov:
 		# Generate coverage data
@@ -403,36 +418,36 @@ def run_tests(ctx, appname, tests):
 		subprocess.call(('lcov -c -d ./src -d ./test -b ' + base).split(),
 				stdout=coverage_lcov, stderr=lcov_log)
 		coverage_lcov.close()
-		
+
 		# Strip out unwanted stuff
 		coverage_stripped_lcov = open('coverage-stripped.lcov', 'w')
 		subprocess.call('lcov --remove coverage.lcov *boost* c++*'.split(),
 				stdout=coverage_stripped_lcov, stderr=lcov_log)
 		coverage_stripped_lcov.close()
-	
+
 		# Generate HTML coverage output
 		if not os.path.isdir('./coverage'):
 			os.makedirs('./coverage')
 		subprocess.call('genhtml -o coverage coverage-stripped.lcov'.split(),
 				stdout=lcov_log, stderr=lcov_log)
-	
+
 	lcov_log.close()
 
 	print
-	Utils.pprint('BOLD', 'Summary:', sep=''),
+	Logs.pprint('BOLD', 'Summary:', sep=''),
 	if failures == 0:
-		Utils.pprint('GREEN', 'All ' + appname + ' tests passed')
+		Logs.pprint('GREEN', 'All ' + appname + ' tests passed')
 	else:
-		Utils.pprint('RED', str(failures) + ' ' + appname + ' test(s) failed')
+		Logs.pprint('RED', str(failures) + ' ' + appname + ' test(s) failed')
 
-	Utils.pprint('BOLD', 'Coverage:', sep='')
+	Logs.pprint('BOLD', 'Coverage:', sep='')
 	print os.path.abspath('coverage/index.html')
 
 	os.chdir(orig_dir)
 
 def shutdown():
 	# This isn't really correct (for packaging), but people asking is annoying
-	if Options.commands['install']:
+	if 'install' in Options.commands:
 		try: os.popen("/sbin/ldconfig")
 		except: pass
 
