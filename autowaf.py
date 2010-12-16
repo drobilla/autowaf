@@ -11,8 +11,9 @@ import sys
 import Configure
 import Logs
 import Options
+
+from waflib import Context, Task, Utils, Node
 from TaskGen import feature, before, after
-from waflib import Context
 
 global g_is_child
 g_is_child = False
@@ -329,10 +330,11 @@ def build_dox(bld, name, version, srcdir, blddir):
 		src_dir = srcdir
 		doc_dir = os.path.join(blddir, 'doc')
 
-	doxyfile = bld(features     = 'subst',
+	subst_tg = bld(features     = 'subst',
 	               source       = 'doc/reference.doxygen.in',
 	               target       = 'doc/reference.doxygen',
-	               install_path = '')
+	               install_path = '',
+	               name         = 'doxyfile')
 
 	subst_dict = {
 		name + '_VERSION' : version,
@@ -340,11 +342,15 @@ def build_dox(bld, name, version, srcdir, blddir):
 		name + '_DOC_DIR' : os.path.abspath(doc_dir)
 	}
 
-	doxyfile.__dict__.update(subst_dict)
+	subst_tg.__dict__.update(subst_dict)
 
 	docs = bld(features = 'doxygen',
-	           doxyfile = 'doc/reference.doxygen',
-	           after    = doxyfile)
+	           doxyfile = os.path.join(str(bld.path.get_bld()), 'doc', 'reference.doxygen'))
+
+	bld.install_files('${HTMLDIR}',     bld.path.get_bld().ant_glob('doc/html/*'))
+	bld.install_files('${MANDIR}/man1', bld.path.get_bld().ant_glob('doc/man/man1/*'))
+	bld.install_files('${MANDIR}/man3', bld.path.get_bld().ant_glob('doc/man/man3/*'))
+
 
 # Version code file generation
 def build_version_files(header_path, source_path, domain, major, minor, micro):
