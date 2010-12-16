@@ -273,7 +273,6 @@ def link_flags(env, lib):
 	return ' '.join(map(lambda x: env['LIB_ST'] % x, env['LIB_' + lib]))
 
 def compile_flags(env, lib):
-	print env
 	return ' '.join(map(lambda x: env['CPPPATH_ST'] % x, env['INCLUDES_' + lib]))
 
 def set_recursive():
