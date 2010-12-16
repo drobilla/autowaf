@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # Waf utilities for easily building standard unixey packages/libraries
 # Licensed under the GNU GPL v2 or later, see COPYING file for details.
-# Copyright (C) 2008 David Robillard
+# Copyright (C) 2008-2010 David Robillard
 # Copyright (C) 2008 Nedko Arnaudov
 
-import misc
 import os
 import subprocess
 import sys
