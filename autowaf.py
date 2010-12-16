@@ -124,7 +124,6 @@ def configure(conf):
 		conf.env.append_value('CFLAGS', vals.split())
 		conf.env.append_value('CXXFLAGS', vals.split())
 	display_header('Global Configuration')
-	conf.check_tool('misc')
 	conf.check_tool('compiler_cc')
 	conf.check_tool('compiler_cxx')
 	if Options.options.docs:
