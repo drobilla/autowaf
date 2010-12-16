@@ -130,7 +130,8 @@ def configure(conf):
 	conf.check_tool('misc')
 	conf.check_tool('compiler_cc')
 	conf.check_tool('compiler_cxx')
-	conf.load('doxygen')
+	if Options.options.docs:
+		conf.load('doxygen')
 	conf.env['DOCS'] = Options.options.docs
 	conf.env['DEBUG'] = Options.options.debug
 	conf.env['STRICT'] = Options.options.strict
