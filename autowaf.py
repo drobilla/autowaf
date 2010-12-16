@@ -112,12 +112,9 @@ def check_pkg(conf, name, **args):
 			if 'atleast_version' in args:
 				conf.env['VERSION_' + name] = args['atleast_version']
 		else:
-			print "!!!!!!!!!!!!!!!!!!!! UNDEFINE ", var_name
 			conf.undefine(var_name)
 			if args['mandatory'] == True:
 				conf.fatal("Required package " + name + " not found")
-
-	define(conf, var_name, 1)
 
 def configure(conf):
 	global g_step
