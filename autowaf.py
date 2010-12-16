@@ -130,6 +130,7 @@ def configure(conf):
 	conf.check_tool('misc')
 	conf.check_tool('compiler_cc')
 	conf.check_tool('compiler_cxx')
+	conf.load('doxygen')
 	conf.env['DOCS'] = Options.options.docs
 	conf.env['DEBUG'] = Options.options.debug
 	conf.env['STRICT'] = Options.options.strict
@@ -292,25 +293,24 @@ def build_pc(bld, name, version, libs):
 	version -- version string              (e.g. '1.2.3')
 	libs    -- string/list of dependencies (e.g. 'LIBFOO GLIB')
 	'''
-
-	obj              = bld.new_task_gen('subst')
-	obj.source       = name.lower() + '.pc.in'
-	obj.target       = name.lower() + '.pc'
-	obj.install_path = '${PREFIX}/${LIBDIRNAME}/pkgconfig'
 	pkg_prefix       = bld.env['PREFIX']
-	obj.exec_prefix = '${prefix}'
 	if pkg_prefix[-1] == '/':
 		pkg_prefix = pkg_prefix[:-1]
-	obj.PREFIX           = pkg_prefix
-	obj.EXEC_PREFIX      = '${prefix}'
-	obj.LIBDIR           = '${prefix}/' + bld.env['LIBDIRNAME']
-	obj.INCLUDEDIR       = '${prefix}/include'
-	setattr(obj, name + '_VERSION', version)
+
+	obj = bld(features     = 'subst',
+	          source       = name.lower() + '.pc.in',
+	          target       = name.lower() + '.pc',
+	          install_path = '${PREFIX}/${LIBDIRNAME}/pkgconfig',
+	          exec_prefix  = '${prefix}',
+	          PREFIX       = pkg_prefix,
+	          EXEC_PREFIX  = '${prefix}',
+	          LIBDIR       = '${prefix}/' + bld.env['LIBDIRNAME'],
+	          INCLUDEDIR   = '${prefix}/include')
+
 	if type(libs) != list:
 		libs = libs.split()
 
-
-	subst_dict = {}
+	subst_dict = { name + '_VERSION' : version }
 	for i in libs:
 		subst_dict[i + '_LIBS']   = link_flags(bld.env, i)
 		lib_cflags = compile_flags(bld.env, i)
@@ -324,28 +324,30 @@ def build_pc(bld, name, version, libs):
 def build_dox(bld, name, version, srcdir, blddir):
 	if not bld.env['DOCS']:
 		return
-	obj = bld.new_task_gen('subst')
-	obj.source = 'doc/reference.doxygen.in'
-	obj.target = 'doc/reference.doxygen'
+
 	if is_child():
 		src_dir = os.path.join(srcdir, name.lower())
-		doc_dir = os.path.join(blddir, 'default', name.lower(), 'doc')
+		doc_dir = os.path.join(blddir, name.lower(), 'doc')
 	else:
 		src_dir = srcdir
-		doc_dir = os.path.join(blddir, 'default', 'doc')
-	obj.dict = {
+		doc_dir = os.path.join(blddir, 'doc')
+
+	doxyfile = bld(features     = 'subst',
+	               source       = 'doc/reference.doxygen.in',
+	               target       = 'doc/reference.doxygen',
+	               install_path = '')
+
+	subst_dict = {
 		name + '_VERSION' : version,
 		name + '_SRCDIR'  : os.path.abspath(src_dir),
 		name + '_DOC_DIR' : os.path.abspath(doc_dir)
 	}
-	obj.install_path = ''
-	out1 = bld.new_task_gen('command-output')
-	out1.dependencies = [obj]
-	out1.stdout = '/doc/doxygen.out'
-	out1.stdin = '/doc/reference.doxygen' # whatever..
-	out1.command = 'doxygen'
-	out1.argv = [os.path.abspath(doc_dir) + '/reference.doxygen']
-	out1.command_is_external = True
+
+	doxyfile.__dict__.update(subst_dict)
+
+	docs = bld(features = 'doxygen',
+	           doxyfile = 'doc/reference.doxygen',
+	           after    = doxyfile)
 
 # Version code file generation
 def build_version_files(header_path, source_path, domain, major, minor, micro):
@@ -386,10 +388,10 @@ def run_tests(ctx, appname, tests):
 
 	top_level = os.path.abspath(ctx.curdir) != os.path.abspath(os.curdir)
 	if top_level:
-		os.chdir('./build/default/' + appname)
+		os.chdir('./build/' + appname)
 		base = '../..'
 	else:
-		os.chdir('./build/default')
+		os.chdir('./build')
 
 	lcov = True
 	lcov_log = open('lcov.log', 'w')
