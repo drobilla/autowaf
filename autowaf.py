@@ -344,8 +344,12 @@ def build_dox(bld, name, version, srcdir, blddir):
 
 	subst_tg.__dict__.update(subst_dict)
 
+	subst_tg.post()
+
 	docs = bld(features = 'doxygen',
-	           doxyfile = os.path.join(str(bld.path.get_bld()), 'doc', 'reference.doxygen'))
+	           doxyfile = 'doc/reference.doxygen')
+
+	docs.post()
 
 	bld.install_files('${HTMLDIR}',     bld.path.get_bld().ant_glob('doc/html/*'))
 	bld.install_files('${MANDIR}/man1', bld.path.get_bld().ant_glob('doc/man/man1/*'))
