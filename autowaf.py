@@ -453,9 +453,11 @@ def run_tests(ctx, appname, tests):
 
 	os.chdir(orig_dir)
 
-def shutdown():
-	# This isn't really correct (for packaging), but people asking is annoying
-	if 'install' in Options.commands:
-		try: os.popen("/sbin/ldconfig")
-		except: pass
+def run_ldconfig(ctx):
+	if ctx.cmd == 'install':
+		print 'Running /sbin/ldconfig'
+		try:
+			os.popen("/sbin/ldconfig")
+		except:
+			print >> sys.stderr, 'Error running ldconfig, libraries may not be linkable'
 
