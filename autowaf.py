@@ -214,6 +214,8 @@ def configure(conf):
 
 	append_cxx_flags('-fPIC -DPIC -fshow-column')
 
+	append_cxx_flags('-I' + os.path.abspath('build'))
+	
 	display_msg(conf, "Install prefix", conf.env['PREFIX'])
 	display_msg(conf, "Debuggable build", str(conf.env['DEBUG']))
 	display_msg(conf, "Strict compiler flags", str(conf.env['STRICT']))
