@@ -123,6 +123,7 @@ def configure(conf):
 	def append_cxx_flags(vals):
 		conf.env.append_value('CFLAGS', vals.split())
 		conf.env.append_value('CXXFLAGS', vals.split())
+	print
 	display_header('Global Configuration')
 	conf.check_tool('compiler_cc')
 	conf.check_tool('compiler_cxx')
@@ -268,7 +269,9 @@ def display_msg(conf, msg, status = None, color = None):
 		color = 'GREEN'
 	elif type(status) == bool and not status or status == "False":
 		color = 'YELLOW'
-	Logs.pprint('BOLD', "%s :" % msg.ljust(conf.line_just), sep='')
+	Logs.pprint('BOLD', " *", sep='')
+	Logs.pprint('NORMAL', "%s" % msg.ljust(conf.line_just - 3), sep='')
+	Logs.pprint('BOLD', ":", sep='')
 	Logs.pprint(color, status)
 
 def link_flags(env, lib):
