@@ -397,7 +397,7 @@ def run_tests(ctx, appname, tests):
 	failures = 0
 	base = '..'
 
-	top_level = os.path.abspath(ctx.curdir) != os.path.abspath(os.curdir)
+	top_level = (len(ctx.stack_path) > 1)
 	if top_level:
 		os.chdir('./build/' + appname)
 		base = '../..'
