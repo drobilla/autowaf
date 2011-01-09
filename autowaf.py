@@ -395,12 +395,12 @@ def build_version_files(header_path, source_path, domain, major, minor, micro):
 def run_tests(ctx, appname, tests):
 	orig_dir = os.path.abspath(os.curdir)
 	failures = 0
-	base = '..'
+	base = '.'
 
 	top_level = (len(ctx.stack_path) > 1)
 	if top_level:
 		os.chdir('./build/' + appname)
-		base = '../..'
+		base = '..'
 	else:
 		os.chdir('./build')
 
