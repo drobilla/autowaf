@@ -82,9 +82,9 @@ def check_header(conf, name, define='', mandatory=False):
 		if sys.platform == "darwin":
 			includes = '/opt/local/include'
 		if define != '':
-			conf.check_cxx(header_name=name, includes=includes, define_name=define, mandatory=mandatory, auto_add_header_name=True)
+			conf.check_cxx(header_name=name, includes=includes, define_name=define, mandatory=mandatory)
 		else:
-			conf.check_cxx(header_name=name, includes=includes, mandatory=mandatory, auto_add_header_name=True)
+			conf.check_cxx(header_name=name, includes=includes, mandatory=mandatory)
 
 def nameify(name):
 	return name.replace('/', '_').replace('++', 'PP').replace('-', '_').replace('.', '_')
