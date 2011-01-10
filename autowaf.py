@@ -237,6 +237,12 @@ def set_local_lib(conf, name, has_objects):
 			conf.env['AUTOWAF_LOCAL_HEADERS'] = {}
 		conf.env['AUTOWAF_LOCAL_HEADERS'][name.lower()] = True
 
+def append_property(obj, key, val):
+	if hasattr(obj, key):
+		setattr(obj, key, getattr(obj, key) + val)
+	else:
+		setattr(obj, key, val)
+
 def use_lib(bld, obj, libs):
 	abssrcdir = os.path.abspath('.')
 	libs_list = libs.split()
@@ -244,21 +250,15 @@ def use_lib(bld, obj, libs):
 		in_headers = l.lower() in bld.env['AUTOWAF_LOCAL_HEADERS']
 		in_libs    = l.lower() in bld.env['AUTOWAF_LOCAL_LIBS']
 		if in_libs:
-			if hasattr(obj, 'use'):
-				obj.use += ' lib' + l.lower() + ' '
-			else:
-				obj.use = 'lib' + l.lower() + ' '
-
+			append_property(obj, 'use', ' lib%s ' % l.lower())
+			append_property(obj, 'framework', bld.env['FRAMEWORK_' + l])
 		if in_headers or in_libs:
 			inc_flag = '-iquote ' + os.path.join(abssrcdir, l.lower())
 			for f in ['CFLAGS', 'CXXFLAGS']:
 				if not inc_flag in bld.env[f]:
 					bld.env.append_value(f, inc_flag)
 		else:
-			if hasattr(obj, 'uselib'):
-				obj.uselib += ' ' + l
-			else:
-				obj.uselib = l
+			append_property(obj, 'uselib', ' ' + l)
 
 def display_header(title):
 	Logs.pprint('BOLD', title)
