@@ -289,7 +289,7 @@ def is_child():
 	return g_is_child
 
 # Pkg-config file
-def build_pc(bld, name, version, libs):
+def build_pc(bld, name, version, libs, subst_dict={}):
 	'''Build a pkg-config file for a library.
 	name    -- uppercase variable name     (e.g. 'SOMENAME')
 	version -- version string              (e.g. '1.2.3')
@@ -312,7 +312,7 @@ def build_pc(bld, name, version, libs):
 	if type(libs) != list:
 		libs = libs.split()
 
-	subst_dict = { name + '_VERSION' : version }
+	subst_dict[name + '_VERSION'] = version
 	for i in libs:
 		subst_dict[i + '_LIBS']   = link_flags(bld.env, i)
 		lib_cflags = compile_flags(bld.env, i)
