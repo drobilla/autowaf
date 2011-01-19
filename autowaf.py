@@ -392,7 +392,7 @@ def build_version_files(header_path, source_path, domain, major, minor, micro):
 
 	return None
 
-def run_tests(ctx, appname, tests):
+def run_tests(ctx, appname, tests, desired_status=0):
 	orig_dir = os.path.abspath(os.curdir)
 	failures = 0
 	base = '.'
@@ -403,6 +403,8 @@ def run_tests(ctx, appname, tests):
 		base = '..'
 	else:
 		os.chdir('./build')
+
+	Logs.pprint('GREEN', "Waf: Entering directory `%s'" % os.path.abspath(os.getcwd()))
 
 	lcov = True
 	lcov_log = open('lcov.log', 'w')
@@ -417,18 +419,21 @@ def run_tests(ctx, appname, tests):
 
 	# Run all tests
 	for i in tests:
-		print
-		Logs.pprint('BOLD', 'Running %s test %s' % (appname, i))
-		if subprocess.call(i) == 0:
-			Logs.pprint('GREEN', 'Passed %s %s' % (appname, i))
+		s = i
+		if type(i) == type([]):
+		    s = ' '.join(i)
+		Logs.pprint('BOLD', 'Running test %s' % s)
+		if subprocess.call(i, shell=True) == desired_status:
+			Logs.pprint('GREEN', 'Passed test %s' % s)
 		else:
 			failures += 1
-			Logs.pprint('RED', 'Failed %s %s' % (appname, i))
+			Logs.pprint('RED', 'Failed test %s' % s)
+		print
 
 	if lcov:
 		# Generate coverage data
 		coverage_lcov = open('coverage.lcov', 'w')
-		subprocess.call(('lcov -c -d ./src -d ./test -b ' + base).split(),
+		subprocess.call(('lcov -c -d ./src -b ' + base).split(),
 				stdout=coverage_lcov, stderr=lcov_log)
 		coverage_lcov.close()
 
@@ -446,7 +451,6 @@ def run_tests(ctx, appname, tests):
 
 	lcov_log.close()
 
-	print
 	Logs.pprint('BOLD', 'Summary:', sep=''),
 	if failures == 0:
 		Logs.pprint('GREEN', 'All ' + appname + ' tests passed')
@@ -454,8 +458,10 @@ def run_tests(ctx, appname, tests):
 		Logs.pprint('RED', str(failures) + ' ' + appname + ' test(s) failed')
 
 	Logs.pprint('BOLD', 'Coverage:', sep='')
-	print os.path.abspath('coverage/index.html')
+	print '<file://' + os.path.abspath('coverage/index.html') + '>'
+	print
 
+	Logs.pprint('GREEN', "Waf: Leaving directory `%s'" % os.path.abspath(os.getcwd()))
 	os.chdir(orig_dir)
 
 def run_ldconfig(ctx):
