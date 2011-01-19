@@ -392,10 +392,13 @@ def build_version_files(header_path, source_path, domain, major, minor, micro):
 
 	return None
 
-def run_tests(ctx, appname, tests, desired_status=0):
+def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src']):
 	orig_dir = os.path.abspath(os.curdir)
 	failures = 0
-	base = '.'
+	base     = '.'
+	diropts  = ''
+	for i in dirs:
+		diropts += ' -d ' + i
 
 	top_level = (len(ctx.stack_path) > 1)
 	if top_level:
@@ -410,7 +413,7 @@ def run_tests(ctx, appname, tests, desired_status=0):
 	lcov_log = open('lcov.log', 'w')
 	try:
 		# Clear coverage data
-		subprocess.call('lcov -d ./src -z'.split(),
+		subprocess.call(('lcov %s -z' % diropts).split(),
 				stdout=lcov_log, stderr=lcov_log)
 	except:
 		lcov = False
@@ -433,7 +436,7 @@ def run_tests(ctx, appname, tests, desired_status=0):
 	if lcov:
 		# Generate coverage data
 		coverage_lcov = open('coverage.lcov', 'w')
-		subprocess.call(('lcov -c -d ./src -b ' + base).split(),
+		subprocess.call(('lcov -c %s -b %s' % (diropts, base)).split(),
 				stdout=coverage_lcov, stderr=lcov_log)
 		coverage_lcov.close()
 
