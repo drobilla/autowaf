@@ -189,11 +189,11 @@ def configure(conf):
 				else:
 					conf.env['LV2DIR'] = os.path.join(conf.env['LIBDIR'], 'lv2')
 
-	conf.env['BINDIRNAME'] = os.path.basename(conf.env['BINDIR'])
-	conf.env['LIBDIRNAME'] = os.path.basename(conf.env['LIBDIR'])
-	conf.env['DATADIRNAME'] = os.path.basename(conf.env['DATADIR'])
+	conf.env['BINDIRNAME']    = os.path.basename(conf.env['BINDIR'])
+	conf.env['LIBDIRNAME']    = os.path.basename(conf.env['LIBDIR'])
+	conf.env['DATADIRNAME']   = os.path.basename(conf.env['DATADIR'])
 	conf.env['CONFIGDIRNAME'] = os.path.basename(conf.env['CONFIGDIR'])
-	conf.env['LV2DIRNAME'] = os.path.basename(conf.env['LV2DIR'])
+	conf.env['LV2DIRNAME']    = os.path.basename(conf.env['LV2DIR'])
 
 	if Options.options.docs:
 		doxygen = conf.find_program('doxygen')
@@ -394,33 +394,80 @@ def build_version_files(header_path, source_path, domain, major, minor, micro):
 
 	return None
 
-def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src']):
-	orig_dir = os.path.abspath(os.curdir)
+def cd_to_build_dir(ctx, appname):
+	orig_dir  = os.path.abspath(os.curdir)
+	top_level = (len(ctx.stack_path) > 1)
+	if top_level:
+		os.chdir('./build/' + appname)
+		return True
+	else:
+		os.chdir('./build')
+		return False
+
+def cd_to_orig_dir(ctx, child):
+	if child:
+		os.chdir('../..')
+	else:
+		os.chdir('..')
+
+def pre_test(ctx, appname, dirs=['./src']):
+	diropts  = ''
+	for i in dirs:
+		diropts += ' -d ' + i
+	child     = cd_to_build_dir(ctx, appname)
+	clear_log = open('lcov-clear.log', 'w')
+	try:
+		# Clear coverage data
+		subprocess.call(('lcov %s -z' % diropts).split(),
+						stdout=clear_log, stderr=clear_log)
+	except:
+		print "Failed to run lcov, no coverage report will be generated"
+	finally:
+		clear_log.close()
+		cd_to_orig_dir(ctx, child)
+
+def post_test(ctx, appname, dirs=['./src']):
+	diropts  = ''
+	for i in dirs:
+		diropts += ' -d ' + i
+	child                  = cd_to_build_dir(ctx, appname)
+	coverage_log           = open('lcov-coverage.log', 'w')
+	coverage_lcov          = open('coverage.lcov', 'w')
+	coverage_stripped_lcov = open('coverage-stripped.lcov', 'w')
+	try:
+		base = '.'
+		if child:
+			base = '..'
+		# Generate coverage data
+		subprocess.call(('lcov -c %s -b %s' % (diropts, base)).split(),
+						stdout=coverage_lcov, stderr=coverage_log)
+		
+		# Strip unwanted stuff
+		subprocess.call('lcov --remove coverage.lcov *boost* c++*'.split(),
+						stdout=coverage_stripped_lcov, stderr=coverage_log)
+
+		# Generate HTML coverage output
+		if not os.path.isdir('./coverage'):
+			os.makedirs('./coverage')
+		subprocess.call('genhtml -o coverage coverage-stripped.lcov'.split(),
+						stdout=coverage_log, stderr=coverage_log)
+#	except:
+#		print "Error running lcov, no coverage report will be generated"
+	finally:
+		coverage_stripped_lcov.close()
+		coverage_lcov.close()
+		coverage_log.close()
+		cd_to_orig_dir(ctx, child)
+	
+def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src'], name='*'):
 	failures = 0
-	base     = '.'
 	diropts  = ''
 	for i in dirs:
 		diropts += ' -d ' + i
 
-	top_level = (len(ctx.stack_path) > 1)
-	if top_level:
-		os.chdir('./build/' + appname)
-		base = '..'
-	else:
-		os.chdir('./build')
+	child = cd_to_build_dir(ctx, appname)
 
 	Logs.pprint('GREEN', "Waf: Entering directory `%s'" % os.path.abspath(os.getcwd()))
-
-	lcov = True
-	lcov_log = open('lcov.log', 'w')
-	try:
-		# Clear coverage data
-		subprocess.call(('lcov %s -z' % diropts).split(),
-				stdout=lcov_log, stderr=lcov_log)
-	except:
-		lcov = False
-		print "Failed to run lcov, no coverage report will be generated"
-
 
 	# Run all tests
 	for i in tests:
@@ -438,39 +485,18 @@ def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src']):
 			Logs.pprint('RED', 'Failed test %s' % s)
 		print
 
-	if lcov:
-		# Generate coverage data
-		coverage_lcov = open('coverage.lcov', 'w')
-		subprocess.call(('lcov -c %s -b %s' % (diropts, base)).split(),
-				stdout=coverage_lcov, stderr=lcov_log)
-		coverage_lcov.close()
-
-		# Strip out unwanted stuff
-		coverage_stripped_lcov = open('coverage-stripped.lcov', 'w')
-		subprocess.call('lcov --remove coverage.lcov *boost* c++*'.split(),
-				stdout=coverage_stripped_lcov, stderr=lcov_log)
-		coverage_stripped_lcov.close()
-
-		# Generate HTML coverage output
-		if not os.path.isdir('./coverage'):
-			os.makedirs('./coverage')
-		subprocess.call('genhtml -o coverage coverage-stripped.lcov'.split(),
-				stdout=lcov_log, stderr=lcov_log)
-
-	lcov_log.close()
-
-	Logs.pprint('BOLD', 'Summary:', sep=''),
+	Logs.pprint('BOLD', 'Summary: ', sep=''),
 	if failures == 0:
-		Logs.pprint('GREEN', 'All ' + appname + ' tests passed')
+		Logs.pprint('GREEN', 'All %s.%s tests passed' % (appname, name))
 	else:
-		Logs.pprint('RED', str(failures) + ' ' + appname + ' test(s) failed')
+		Logs.pprint('RED', '%d %s.%s tests failed' % (failures, appname, name))
 
 	Logs.pprint('BOLD', 'Coverage:', sep='')
 	print '<file://' + os.path.abspath('coverage/index.html') + '>'
 	print
 
 	Logs.pprint('GREEN', "Waf: Leaving directory `%s'" % os.path.abspath(os.getcwd()))
-	os.chdir(orig_dir)
+	cd_to_orig_dir(ctx, child)
 
 def run_ldconfig(ctx):
 	if ctx.cmd == 'install':
