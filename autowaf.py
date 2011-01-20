@@ -40,6 +40,8 @@ def set_options(opt):
 	opt.tool_options('compiler_cxx')
 	opt.add_option('--debug', action='store_true', default=False, dest='debug',
 			help="Build debuggable binaries [Default: False]")
+	opt.add_option('--grind', action='store_true', default=False, dest='grind',
+				   help="Run tests in valgrind [Default: False]")
 	opt.add_option('--strict', action='store_true', default=False, dest='strict',
 			help="Use strict compiler flags and show all warnings [Default: False]")
 	opt.add_option('--docs', action='store_true', default=False, dest='docs',
@@ -426,7 +428,10 @@ def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src']):
 		if type(i) == type([]):
 		    s = ' '.join(i)
 		Logs.pprint('BOLD', 'Running test %s' % s)
-		if subprocess.call(i, shell=True) == desired_status:
+		cmd = i
+		if Options.options.grind:
+			cmd = 'valgrind ' + i
+		if subprocess.call(cmd, shell=True) == desired_status:
 			Logs.pprint('GREEN', 'Passed test %s' % s)
 		else:
 			failures += 1
