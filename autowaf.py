@@ -399,10 +399,9 @@ def cd_to_build_dir(ctx, appname):
 	top_level = (len(ctx.stack_path) > 1)
 	if top_level:
 		os.chdir('./build/' + appname)
-		return True
 	else:
 		os.chdir('./build')
-		return False
+	Logs.pprint('GREEN', "Waf: Entering directory `%s'" % os.path.abspath(os.getcwd()))
 
 def cd_to_orig_dir(ctx, child):
 	if child:
@@ -414,7 +413,7 @@ def pre_test(ctx, appname, dirs=['./src']):
 	diropts  = ''
 	for i in dirs:
 		diropts += ' -d ' + i
-	child     = cd_to_build_dir(ctx, appname)
+	cd_to_build_dir(ctx, appname)
 	clear_log = open('lcov-clear.log', 'w')
 	try:
 		# Clear coverage data
@@ -424,19 +423,17 @@ def pre_test(ctx, appname, dirs=['./src']):
 		print "Failed to run lcov, no coverage report will be generated"
 	finally:
 		clear_log.close()
-		cd_to_orig_dir(ctx, child)
 
 def post_test(ctx, appname, dirs=['./src']):
 	diropts  = ''
 	for i in dirs:
 		diropts += ' -d ' + i
-	child                  = cd_to_build_dir(ctx, appname)
 	coverage_log           = open('lcov-coverage.log', 'w')
 	coverage_lcov          = open('coverage.lcov', 'w')
 	coverage_stripped_lcov = open('coverage-stripped.lcov', 'w')
 	try:
 		base = '.'
-		if child:
+		if g_is_child:
 			base = '..'
 		# Generate coverage data
 		subprocess.call(('lcov -c %s -b %s' % (diropts, base)).split(),
@@ -457,7 +454,17 @@ def post_test(ctx, appname, dirs=['./src']):
 		coverage_stripped_lcov.close()
 		coverage_lcov.close()
 		coverage_log.close()
-		cd_to_orig_dir(ctx, child)
+
+		print
+		Logs.pprint('GREEN', "Waf: Leaving directory `%s'" % os.path.abspath(os.getcwd()))
+		top_level = (len(ctx.stack_path) > 1)
+		if top_level:
+			cd_to_orig_dir(ctx, top_level)
+
+	print
+	Logs.pprint('BOLD', 'Coverage:', sep='')
+	print '<file://' + os.path.abspath('coverage/index.html') + '>'
+	print
 	
 def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src'], name='*'):
 	failures = 0
@@ -465,38 +472,29 @@ def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src'], name='*'):
 	for i in dirs:
 		diropts += ' -d ' + i
 
-	child = cd_to_build_dir(ctx, appname)
-
-	Logs.pprint('GREEN', "Waf: Entering directory `%s'" % os.path.abspath(os.getcwd()))
-
 	# Run all tests
 	for i in tests:
 		s = i
 		if type(i) == type([]):
 		    s = ' '.join(i)
-		Logs.pprint('BOLD', 'Running test %s' % s)
+		print
+		Logs.pprint('BOLD', '** Test', sep='')
+		Logs.pprint('NORMAL', '%s' % s)
 		cmd = i
 		if Options.options.grind:
 			cmd = 'valgrind ' + i
 		if subprocess.call(cmd, shell=True) == desired_status:
-			Logs.pprint('GREEN', 'Passed test %s' % s)
+			Logs.pprint('GREEN', '** Pass')
 		else:
 			failures += 1
-			Logs.pprint('RED', 'Failed test %s' % s)
-		print
+			Logs.pprint('RED', '** FAIL')
 
-	Logs.pprint('BOLD', 'Summary: ', sep=''),
+	print
+	Logs.pprint('BOLD', 'Summary:', sep=''),
 	if failures == 0:
 		Logs.pprint('GREEN', 'All %s.%s tests passed' % (appname, name))
 	else:
 		Logs.pprint('RED', '%d %s.%s tests failed' % (failures, appname, name))
-
-	Logs.pprint('BOLD', 'Coverage:', sep='')
-	print '<file://' + os.path.abspath('coverage/index.html') + '>'
-	print
-
-	Logs.pprint('GREEN', "Waf: Leaving directory `%s'" % os.path.abspath(os.getcwd()))
-	cd_to_orig_dir(ctx, child)
 
 def run_ldconfig(ctx):
 	if ctx.cmd == 'install':
