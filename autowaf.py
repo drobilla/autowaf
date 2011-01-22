@@ -490,11 +490,10 @@ def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src'], name='*'):
 			Logs.pprint('RED', '** FAIL')
 
 	print
-	Logs.pprint('BOLD', 'Summary:', sep=''),
 	if failures == 0:
-		Logs.pprint('GREEN', 'All %s.%s tests passed' % (appname, name))
+		Logs.pprint('GREEN', '** Pass: All %s.%s tests passed' % (appname, name))
 	else:
-		Logs.pprint('RED', '%d %s.%s tests failed' % (failures, appname, name))
+		Logs.pprint('RED', '** FAIL: %d %s.%s tests failed' % (failures, appname, name))
 
 def run_ldconfig(ctx):
 	if ctx.cmd == 'install':
