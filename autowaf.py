@@ -96,9 +96,9 @@ def define(conf, var_name, value):
 	conf.env[var_name] = value
 
 def check_pkg(conf, name, **args):
+	"Check for a package iff it hasn't been checked for yet"
 	if not 'mandatory' in args:
 		args['mandatory'] = True
-	"Check for a package iff it hasn't been checked for yet"
 	var_name = 'HAVE_' + nameify(args['uselib_store'])
 	check = not var_name in conf.env
 	if not check and 'atleast_version' in args:
