@@ -110,7 +110,7 @@ def check_pkg(conf, name, **args):
 		conf.check_cfg(package=name, args="--cflags --libs", **args)
 		found = bool(conf.env[var_name])
 		if found:
-			define(conf, var_name, int(found))
+			define(conf, var_name, 1)
 			if 'atleast_version' in args:
 				conf.env['VERSION_' + name] = args['atleast_version']
 		else:
