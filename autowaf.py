@@ -374,7 +374,7 @@ def build_version_files(header_path, source_path, domain, major, minor, micro):
 		o.write(text)
 		o.close()
 	except IOError:
-		Logs.pprint('RED', "Could not open %s for writing\n" % source_path)
+		Logs.error('Failed to open %s for writing\n' % source_path)
 		sys.exit(-1)
 
 	text  = "#ifndef __" + domain + "_version_h__\n"
@@ -389,7 +389,7 @@ def build_version_files(header_path, source_path, domain, major, minor, micro):
 		o.write(text)
 		o.close()
 	except IOError:
-		Logs.pprint('RED', "Could not open %s for writing\n" % header_path)
+		Logs.warn('Failed to open %s for writing\n' % header_path)
 		sys.exit(-1)
 
 	return None
@@ -420,7 +420,7 @@ def pre_test(ctx, appname, dirs=['./src']):
 		subprocess.call(('lcov %s -z' % diropts).split(),
 						stdout=clear_log, stderr=clear_log)
 	except:
-		Logs.pprint('RED', "Failed to run lcov, no coverage report will be generated")
+		Logs.warn('Failed to run lcov, no coverage report will be generated')
 	finally:
 		clear_log.close()
 
@@ -499,5 +499,5 @@ def run_ldconfig(ctx):
 		try:
 			os.popen("/sbin/ldconfig")
 		except:
-			Logs.pprint('RED', 'Error running ldconfig, libraries may not be linkable')
+			Logs.error('Error running ldconfig, libraries may not be linkable')
 
