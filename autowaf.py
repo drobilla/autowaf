@@ -125,7 +125,7 @@ def configure(conf):
 	def append_cxx_flags(vals):
 		conf.env.append_value('CFLAGS', vals.split())
 		conf.env.append_value('CXXFLAGS', vals.split())
-	print
+	print()
 	display_header('Global Configuration')
 	conf.check_tool('compiler_cc')
 	conf.check_tool('compiler_cxx')
@@ -223,7 +223,7 @@ def configure(conf):
 	display_msg(conf, "Debuggable build", str(conf.env['DEBUG']))
 	display_msg(conf, "Strict compiler flags", str(conf.env['STRICT']))
 	display_msg(conf, "Build documentation", str(conf.env['DOCS']))
-	print
+	print()
 
 	g_step = 2
 
@@ -374,7 +374,7 @@ def build_version_files(header_path, source_path, domain, major, minor, micro):
 		o.write(text)
 		o.close()
 	except IOError:
-		print "Could not open", source_path, " for writing\n"
+		Logs.pprint('RED', "Could not open %s for writing\n" % source_path)
 		sys.exit(-1)
 
 	text  = "#ifndef __" + domain + "_version_h__\n"
@@ -389,7 +389,7 @@ def build_version_files(header_path, source_path, domain, major, minor, micro):
 		o.write(text)
 		o.close()
 	except IOError:
-		print "Could not open", header_path, " for writing\n"
+		Logs.pprint('RED', "Could not open %s for writing\n" % header_path)
 		sys.exit(-1)
 
 	return None
@@ -420,7 +420,7 @@ def pre_test(ctx, appname, dirs=['./src']):
 		subprocess.call(('lcov %s -z' % diropts).split(),
 						stdout=clear_log, stderr=clear_log)
 	except:
-		print "Failed to run lcov, no coverage report will be generated"
+		Logs.pprint('RED', "Failed to run lcov, no coverage report will be generated")
 	finally:
 		clear_log.close()
 
@@ -448,23 +448,21 @@ def post_test(ctx, appname, dirs=['./src']):
 			os.makedirs('./coverage')
 		subprocess.call('genhtml -o coverage coverage-stripped.lcov'.split(),
 						stdout=coverage_log, stderr=coverage_log)
-#	except:
-#		print "Error running lcov, no coverage report will be generated"
+
 	finally:
 		coverage_stripped_lcov.close()
 		coverage_lcov.close()
 		coverage_log.close()
 
-		print
+		print()
 		Logs.pprint('GREEN', "Waf: Leaving directory `%s'" % os.path.abspath(os.getcwd()))
 		top_level = (len(ctx.stack_path) > 1)
 		if top_level:
 			cd_to_orig_dir(ctx, top_level)
 
-	print
+	print()
 	Logs.pprint('BOLD', 'Coverage:', sep='')
-	print '<file://' + os.path.abspath('coverage/index.html') + '>'
-	print
+	print('<file://%s>\n\n' % os.path.abspath('coverage/index.html'))
 	
 def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src'], name='*'):
 	failures = 0
@@ -477,7 +475,7 @@ def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src'], name='*'):
 		s = i
 		if type(i) == type([]):
 		    s = ' '.join(i)
-		print
+		print()
 		Logs.pprint('BOLD', '** Test', sep='')
 		Logs.pprint('NORMAL', '%s' % s)
 		cmd = i
@@ -489,7 +487,7 @@ def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src'], name='*'):
 			failures += 1
 			Logs.pprint('RED', '** FAIL')
 
-	print
+	print()
 	if failures == 0:
 		Logs.pprint('GREEN', '** Pass: All %s.%s tests passed' % (appname, name))
 	else:
@@ -497,9 +495,9 @@ def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src'], name='*'):
 
 def run_ldconfig(ctx):
 	if ctx.cmd == 'install':
-		print 'Running /sbin/ldconfig'
+		print('Running /sbin/ldconfig')
 		try:
 			os.popen("/sbin/ldconfig")
 		except:
-			print >> sys.stderr, 'Error running ldconfig, libraries may not be linkable'
+			Logs.pprint('RED', 'Error running ldconfig, libraries may not be linkable')
 
