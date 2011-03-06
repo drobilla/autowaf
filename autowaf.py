@@ -125,7 +125,7 @@ def configure(conf):
 	def append_cxx_flags(vals):
 		conf.env.append_value('CFLAGS', vals.split())
 		conf.env.append_value('CXXFLAGS', vals.split())
-	print()
+	print('')
 	display_header('Global Configuration')
 	conf.check_tool('compiler_cc')
 	conf.check_tool('compiler_cxx')
@@ -223,7 +223,7 @@ def configure(conf):
 	display_msg(conf, "Debuggable build", str(conf.env['DEBUG']))
 	display_msg(conf, "Strict compiler flags", str(conf.env['STRICT']))
 	display_msg(conf, "Build documentation", str(conf.env['DOCS']))
-	print()
+	print('')
 
 	g_step = 2
 
@@ -454,13 +454,13 @@ def post_test(ctx, appname, dirs=['./src']):
 		coverage_lcov.close()
 		coverage_log.close()
 
-		print()
+		print('')
 		Logs.pprint('GREEN', "Waf: Leaving directory `%s'" % os.path.abspath(os.getcwd()))
 		top_level = (len(ctx.stack_path) > 1)
 		if top_level:
 			cd_to_orig_dir(ctx, top_level)
 
-	print()
+	print('')
 	Logs.pprint('BOLD', 'Coverage:', sep='')
 	print('<file://%s>\n\n' % os.path.abspath('coverage/index.html'))
 	
@@ -475,7 +475,7 @@ def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src'], name='*'):
 		s = i
 		if type(i) == type([]):
 		    s = ' '.join(i)
-		print()
+		print('')
 		Logs.pprint('BOLD', '** Test', sep='')
 		Logs.pprint('NORMAL', '%s' % s)
 		cmd = i
@@ -487,7 +487,7 @@ def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src'], name='*'):
 			failures += 1
 			Logs.pprint('RED', '** FAIL')
 
-	print()
+	print('')
 	if failures == 0:
 		Logs.pprint('GREEN', '** Pass: All %s.%s tests passed' % (appname, name))
 	else:
