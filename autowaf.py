@@ -8,12 +8,8 @@ import os
 import subprocess
 import sys
 
-import Configure
-import Logs
-import Options
-
-from waflib import Context, Task, Utils, Node
-from TaskGen import feature, before, after
+from waflib import Configure, Context, Logs, Node, Options, Task, Utils
+from waflib.TaskGen import feature, before, after
 
 global g_is_child
 g_is_child = False
@@ -36,8 +32,8 @@ def set_options(opt):
 	global g_step
 	if g_step > 0:
 		return
-	opt.tool_options('compiler_cc')
-	opt.tool_options('compiler_cxx')
+	opt.load('compiler_cc')
+	opt.load('compiler_cxx')
 	opt.add_option('--debug', action='store_true', default=False, dest='debug',
 			help="Build debuggable binaries [Default: False]")
 	opt.add_option('--grind', action='store_true', default=False, dest='grind',
@@ -97,8 +93,6 @@ def define(conf, var_name, value):
 
 def check_pkg(conf, name, **args):
 	"Check for a package iff it hasn't been checked for yet"
-	if not 'mandatory' in args:
-		args['mandatory'] = True
 	var_name = 'HAVE_' + nameify(args['uselib_store'])
 	check = not var_name in conf.env
 	if not check and 'atleast_version' in args:
@@ -108,15 +102,8 @@ def check_pkg(conf, name, **args):
 			check = True;
 	if check:
 		conf.check_cfg(package=name, args="--cflags --libs", **args)
-		found = bool(conf.env[var_name])
-		if found:
-			define(conf, var_name, 1)
-			if 'atleast_version' in args:
-				conf.env['VERSION_' + name] = args['atleast_version']
-		else:
-			conf.undefine(var_name)
-			if args['mandatory'] == True:
-				conf.fatal("Required package " + name + " not found")
+		if 'atleast_version' in args:
+			conf.env['VERSION_' + name] = args['atleast_version']
 
 def configure(conf):
 	global g_step
@@ -127,8 +114,8 @@ def configure(conf):
 		conf.env.append_value('CXXFLAGS', vals.split())
 	print('')
 	display_header('Global Configuration')
-	conf.check_tool('compiler_cc')
-	conf.check_tool('compiler_cxx')
+	conf.load('compiler_cc')
+	conf.load('compiler_cxx')
 	if Options.options.docs:
 		conf.load('doxygen')
 	conf.env['DOCS'] = Options.options.docs
