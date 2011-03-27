@@ -1,8 +1,10 @@
 #!/usr/bin/env python
-# Waf utilities for easily building standard unixey packages/libraries
+# -*- coding: utf-8 -*-
+#
+# Autowaf, useful waf utilities with support for recursive projects
+# Copyright 2008-2011 David Robillard
+#
 # Licensed under the GNU GPL v2 or later, see COPYING file for details.
-# Copyright (C) 2008-2010 David Robillard
-# Copyright (C) 2008 Nedko Arnaudov
 
 import os
 import subprocess
@@ -34,38 +36,52 @@ def set_options(opt):
 		return
 	opt.load('compiler_cc')
 	opt.load('compiler_cxx')
+
+	# Install directory options
+	dirs_options = opt.add_option_group('Installation directories', '')
+
+	# Move --prefix and --destdir to directory options group
+	for k in ('--prefix', '--destdir'):
+		option = opt.parser.get_option(k)
+		if option:
+			opt.parser.remove_option(k)
+			dirs_options.add_option(option)
+
+	# Standard directory options
+	dirs_options.add_option('--bindir', type='string',
+			help="Executable programs [Default: PREFIX/bin]")
+	dirs_options.add_option('--configdir', type='string',
+			help="Configuration data [Default: PREFIX/etc]")
+	dirs_options.add_option('--datadir', type='string',
+			help="Shared data [Default: PREFIX/share]")
+	dirs_options.add_option('--includedir', type='string',
+			help="Header files [Default: PREFIX/include]")
+	dirs_options.add_option('--libdir', type='string',
+			help="Libraries [Default: PREFIX/lib]")
+	dirs_options.add_option('--mandir', type='string',
+			help="Manual pages [Default: DATADIR/man]")
+	dirs_options.add_option('--htmldir', type='string',
+			help="HTML documentation [Default: DATADIR/doc/PACKAGE]")
+
+	# Build options
 	opt.add_option('--debug', action='store_true', default=False, dest='debug',
-			help="Build debuggable binaries [Default: False]")
+	               help="Build debuggable binaries [Default: False]")
 	opt.add_option('--grind', action='store_true', default=False, dest='grind',
 				   help="Run tests in valgrind [Default: False]")
 	opt.add_option('--strict', action='store_true', default=False, dest='strict',
-			help="Use strict compiler flags and show all warnings [Default: False]")
+	               help="Use strict compiler flags and show all warnings [Default: False]")
 	opt.add_option('--docs', action='store_true', default=False, dest='docs',
-			help="Build documentation - requires doxygen [Default: False]")
-	opt.add_option('--bundle', action='store_true', default=False,
-			help="Build a self-contained bundle [Default: False]")
-	opt.add_option('--bindir', type='string',
-			help="Executable programs [Default: PREFIX/bin]")
-	opt.add_option('--libdir', type='string',
-			help="Libraries [Default: PREFIX/lib]")
-	opt.add_option('--includedir', type='string',
-			help="Header files [Default: PREFIX/include]")
-	opt.add_option('--datadir', type='string',
-			help="Shared data [Default: PREFIX/share]")
-	opt.add_option('--configdir', type='string',
-			help="Configuration data [Default: PREFIX/etc]")
-	opt.add_option('--mandir', type='string',
-			help="Manual pages [Default: DATADIR/man]")
-	opt.add_option('--htmldir', type='string',
-			help="HTML documentation [Default: DATADIR/doc/PACKAGE]")
+	               help="Build documentation - requires doxygen [Default: False]")
+
+	# LV2 options
 	opt.add_option('--lv2-user', action='store_true', default=False, dest='lv2_user',
-			help="Install LV2 bundles to user-local location [Default: False]")
+	               help="Install LV2 bundles to user-local location [Default: False]")
 	if sys.platform == "darwin":
 		opt.add_option('--lv2dir', type='string',
-				help="LV2 bundles [Default: /Library/Audio/Plug-Ins/LV2]")
+		               help="LV2 bundles [Default: /Library/Audio/Plug-Ins/LV2]")
 	else:
 		opt.add_option('--lv2dir', type='string',
-				help="LV2 bundles [Default: LIBDIR/lv2]")
+		               help="LV2 bundles [Default: LIBDIR/lv2]")
 	g_step = 1
 
 def check_header(conf, name, define='', mandatory=False):
@@ -121,75 +137,46 @@ def configure(conf):
 	conf.env['DOCS'] = Options.options.docs
 	conf.env['DEBUG'] = Options.options.debug
 	conf.env['STRICT'] = Options.options.strict
-	conf.env['PREFIX'] = os.path.abspath(os.path.expanduser(os.path.normpath(conf.env['PREFIX'])))
-	if Options.options.bundle:
-		conf.env['BUNDLE'] = True
-		define(conf, 'BUNDLE', 1)
-		conf.env['BINDIR'] = conf.env['PREFIX']
-		conf.env['INCLUDEDIR'] = os.path.join(conf.env['PREFIX'], 'Headers')
-		conf.env['LIBDIR'] = os.path.join(conf.env['PREFIX'], 'Libraries')
-		conf.env['DATADIR'] = os.path.join(conf.env['PREFIX'], 'Resources')
-		conf.env['HTMLDIR'] = os.path.join(conf.env['PREFIX'], 'Resources/Documentation')
-		conf.env['MANDIR'] = os.path.join(conf.env['PREFIX'], 'Resources/Man')
-		conf.env['LV2DIR'] = os.path.join(conf.env['PREFIX'], 'PlugIns')
-	else:
-		conf.env['BUNDLE'] = False
-		if Options.options.bindir:
-			conf.env['BINDIR'] = Options.options.bindir
-		else:
-			conf.env['BINDIR'] = os.path.join(conf.env['PREFIX'], 'bin')
-		if Options.options.includedir:
-			conf.env['INCLUDEDIR'] = Options.options.includedir
-		else:
-			conf.env['INCLUDEDIR'] = os.path.join(conf.env['PREFIX'], 'include')
-		if Options.options.libdir:
-			conf.env['LIBDIR'] = Options.options.libdir
-		else:
-			conf.env['LIBDIR'] = os.path.join(conf.env['PREFIX'], 'lib')
-		if Options.options.datadir:
-			conf.env['DATADIR'] = Options.options.datadir
-		else:
-			conf.env['DATADIR'] = os.path.join(conf.env['PREFIX'], 'share')
-		if Options.options.configdir:
-			conf.env['CONFIGDIR'] = Options.options.configdir
-		else:
-			conf.env['CONFIGDIR'] = os.path.join(conf.env['PREFIX'], 'etc')
-		if Options.options.htmldir:
-			conf.env['HTMLDIR'] = Options.options.htmldir
-		else:
-			conf.env['HTMLDIR'] = os.path.join(conf.env['DATADIR'], 'doc', Context.g_module.APPNAME)
-		if Options.options.mandir:
-			conf.env['MANDIR'] = Options.options.mandir
-		else:
-			conf.env['MANDIR'] = os.path.join(conf.env['DATADIR'], 'man')
-		if Options.options.lv2dir:
-			conf.env['LV2DIR'] = Options.options.lv2dir
-		else:
-			if Options.options.lv2_user:
-				if sys.platform == "darwin":
-					conf.env['LV2DIR'] = os.path.join(os.getenv('HOME'), 'Library/Audio/Plug-Ins/LV2')
-				else:
-					conf.env['LV2DIR'] = os.path.join(os.getenv('HOME'), '.lv2')
-			else:
-				if sys.platform == "darwin":
-					conf.env['LV2DIR'] = '/Library/Audio/Plug-Ins/LV2'
-				else:
-					conf.env['LV2DIR'] = os.path.join(conf.env['LIBDIR'], 'lv2')
+	conf.env['PREFIX'] = os.path.normpath(os.path.abspath(os.path.expanduser(conf.env['PREFIX'])))
 
-	conf.env['BINDIRNAME']    = os.path.basename(conf.env['BINDIR'])
-	conf.env['LIBDIRNAME']    = os.path.basename(conf.env['LIBDIR'])
-	conf.env['DATADIRNAME']   = os.path.basename(conf.env['DATADIR'])
-	conf.env['CONFIGDIRNAME'] = os.path.basename(conf.env['CONFIGDIR'])
-	conf.env['LV2DIRNAME']    = os.path.basename(conf.env['LV2DIR'])
+	def config_dir(var, opt, default):
+		if opt:
+			conf.env[var] = opt
+		else:
+			conf.env[var] = default
+
+	opts   = Options.options
+	prefix = conf.env['PREFIX']
+	config_dir('BINDIR',     opts.bindir,     os.path.join(prefix, 'bin'))
+	config_dir('SYSCONFDIR', opts.configdir,  os.path.join(prefix, 'etc'))
+	config_dir('DATADIR',    opts.datadir,    os.path.join(prefix, 'share'))
+	config_dir('INCLUDEDIR', opts.includedir, os.path.join(prefix, 'include'))
+	config_dir('LIBDIR',     opts.libdir,     os.path.join(prefix, 'lib'))
+	config_dir('MANDIR',     opts.mandir,     os.path.join(prefix, 'man'))
+	config_dir('HTMLDIR',    opts.htmldir,    os.path.join(prefix, 'html'))
+
+	if Options.options.lv2dir:
+		conf.env['LV2DIR'] = Options.options.lv2dir
+	else:
+		if Options.options.lv2_user:
+			if sys.platform == "darwin":
+				conf.env['LV2DIR'] = os.path.join(os.getenv('HOME'), 'Library/Audio/Plug-Ins/LV2')
+			else:
+				conf.env['LV2DIR'] = os.path.join(os.getenv('HOME'), '.lv2')
+		else:
+			if sys.platform == "darwin":
+				conf.env['LV2DIR'] = '/Library/Audio/Plug-Ins/LV2'
+			else:
+				conf.env['LV2DIR'] = os.path.join(conf.env['LIBDIR'], 'lv2')
 
 	if Options.options.docs:
 		doxygen = conf.find_program('doxygen')
 		if not doxygen:
-			conf.fatal("Doxygen is required to build documentation, configure without --docs")
+			conf.fatal("Doxygen is required to build with --docs")
 
 		dot = conf.find_program('dot')
 		if not dot:
-			conf.fatal("Graphviz (dot) is required to build documentation, configure without --docs")
+			conf.fatal("Graphviz (dot) is required to build with --docs")
 
 	if Options.options.debug:
 		conf.env['CFLAGS'] = [ '-O0', '-g' ]
@@ -293,12 +280,12 @@ def build_pc(bld, name, version, libs, subst_dict={}):
 	obj = bld(features     = 'subst',
 	          source       = name.lower() + '.pc.in',
 	          target       = name.lower() + '.pc',
-	          install_path = '${PREFIX}/${LIBDIRNAME}/pkgconfig',
+	          install_path = os.path.join(bld.env['LIBDIR'], 'pkgconfig'),
 	          exec_prefix  = '${prefix}',
 	          PREFIX       = pkg_prefix,
 	          EXEC_PREFIX  = '${prefix}',
-	          LIBDIR       = '${prefix}/' + bld.env['LIBDIRNAME'],
-	          INCLUDEDIR   = '${prefix}/include')
+	          LIBDIR       = bld.env['LIBDIR'],
+	          INCLUDEDIR   = bld.env['INCLUDEDIR'])
 
 	if type(libs) != list:
 		libs = libs.split()
@@ -489,4 +476,3 @@ def run_ldconfig(ctx):
 			os.popen("/sbin/ldconfig")
 		except:
 			Logs.error('Error running ldconfig, libraries may not be linkable')
-
