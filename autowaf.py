@@ -121,6 +121,12 @@ def check_pkg(conf, name, **args):
 		if 'atleast_version' in args:
 			conf.env['VERSION_' + name] = args['atleast_version']
 
+def normpath(path):
+	if sys.platform == 'win32':
+		return os.path.normpath(path).replace('\\', '\\\\')
+	else:
+		return os.path.normpath(path)
+
 def configure(conf):
 	global g_step
 	if g_step > 1:
@@ -139,14 +145,18 @@ def configure(conf):
 	conf.env['STRICT'] = Options.options.strict
 	conf.env['PREFIX'] = os.path.normpath(os.path.abspath(os.path.expanduser(conf.env['PREFIX'])))
 
+	if sys.platform == 'win32':
+		conf.env['PREFIX'] = conf.env['PREFIX'].replace('\\', '\\\\')
+	
 	def config_dir(var, opt, default):
 		if opt:
-			conf.env[var] = opt
+			conf.env[var] = normpath(opt)
 		else:
-			conf.env[var] = default
+			conf.env[var] = normpath(default)
 
 	opts   = Options.options
 	prefix = conf.env['PREFIX']
+	
 	config_dir('BINDIR',     opts.bindir,     os.path.join(prefix, 'bin'))
 	config_dir('SYSCONFDIR', opts.configdir,  os.path.join(prefix, 'etc'))
 	config_dir('DATADIR',    opts.datadir,    os.path.join(prefix, 'share'))
