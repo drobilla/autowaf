@@ -79,6 +79,9 @@ def set_options(opt):
 	if sys.platform == "darwin":
 		opt.add_option('--lv2dir', type='string',
 		               help="LV2 bundles [Default: /Library/Audio/Plug-Ins/LV2]")
+	elif sys.platform == "win32":
+		opt.add_option('--lv2dir', type='string',
+		               help="LV2 bundles [Default: C:\Program Files\LV2]")
 	else:
 		opt.add_option('--lv2dir', type='string',
 		               help="LV2 bundles [Default: LIBDIR/lv2]")
@@ -171,11 +174,15 @@ def configure(conf):
 		if Options.options.lv2_user:
 			if sys.platform == "darwin":
 				conf.env['LV2DIR'] = os.path.join(os.getenv('HOME'), 'Library/Audio/Plug-Ins/LV2')
+			elif sys.platform == "win32":
+				conf.env['LV2DIR'] = os.path.join(os.getenv('APPDATA'), 'LV2')
 			else:
 				conf.env['LV2DIR'] = os.path.join(os.getenv('HOME'), '.lv2')
 		else:
 			if sys.platform == "darwin":
 				conf.env['LV2DIR'] = '/Library/Audio/Plug-Ins/LV2'
+			elif sys.platform == "win32":
+				conf.env['LV2DIR'] = os.path.join(os.getenv('PROGRAMFILES'), 'LV2')
 			else:
 				conf.env['LV2DIR'] = os.path.join(conf.env['LIBDIR'], 'lv2')
 
