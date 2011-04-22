@@ -60,8 +60,8 @@ def set_options(opt):
                             help="Libraries [Default: PREFIX/lib]")
     dirs_options.add_option('--mandir', type='string',
                             help="Manual pages [Default: DATADIR/man]")
-    dirs_options.add_option('--htmldir', type='string',
-                            help="HTML documentation [Default: DATADIR/doc/PACKAGE]")
+    dirs_options.add_option('--docdir', type='string',
+                            help="HTML documentation [Default: DATADIR/doc]")
 
     # Build options
     opt.add_option('--debug', action='store_true', default=False, dest='debug',
@@ -166,7 +166,7 @@ def configure(conf):
     config_dir('INCLUDEDIR', opts.includedir, os.path.join(prefix, 'include'))
     config_dir('LIBDIR',     opts.libdir,     os.path.join(prefix, 'lib'))
     config_dir('MANDIR',     opts.mandir,     os.path.join(prefix, 'man'))
-    config_dir('HTMLDIR',    opts.htmldir,    os.path.join(prefix, 'html'))
+    config_dir('DOCDIR',     opts.docdir,     os.path.join(conf.env['DATADIR'], 'doc'))
 
     if Options.options.lv2dir:
         conf.env['LV2DIR'] = Options.options.lv2dir
@@ -350,10 +350,12 @@ def build_dox(bld, name, version, srcdir, blddir):
 
     docs.post()
 
-    bld.install_files('${HTMLDIR}',     bld.path.get_bld().ant_glob('doc/html/*'))
-    bld.install_files('${MANDIR}/man1', bld.path.get_bld().ant_glob('doc/man/man1/*'))
-    bld.install_files('${MANDIR}/man3', bld.path.get_bld().ant_glob('doc/man/man3/*'))
-
+    bld.install_files('${DOCDIR}/%s/html' % name.lower(),
+                      bld.path.get_bld().ant_glob('doc/html/*'))
+    bld.install_files('${MANDIR}/man1',
+                      bld.path.get_bld().ant_glob('doc/man/man1/*'))
+    bld.install_files('${MANDIR}/man3',
+                      bld.path.get_bld().ant_glob('doc/man/man3/*'))
 
 # Version code file generation
 def build_version_files(header_path, source_path, domain, major, minor, micro):
