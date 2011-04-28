@@ -284,19 +284,25 @@ def is_child():
     return g_is_child
 
 # Pkg-config file
-def build_pc(bld, name, version, libs, subst_dict={}):
+def build_pc(bld, name, version, version_suffix, libs, subst_dict={}):
     '''Build a pkg-config file for a library.
-    name    -- uppercase variable name     (e.g. 'SOMENAME')
-    version -- version string              (e.g. '1.2.3')
-    libs    -- string/list of dependencies (e.g. 'LIBFOO GLIB')
+    name           -- uppercase variable name     (e.g. 'SOMENAME')
+    version        -- version string              (e.g. '1.2.3')
+    version_suffix -- name version suffix         (e.g. '2')
+    libs           -- string/list of dependencies (e.g. 'LIBFOO GLIB')
     '''
     pkg_prefix       = bld.env['PREFIX']
     if pkg_prefix[-1] == '/':
         pkg_prefix = pkg_prefix[:-1]
 
+    target = name.lower()
+    if version_suffix != '':
+        target += '-' + version_suffix
+    target += '.pc'
+
     obj = bld(features     = 'subst',
-              source       = name.lower() + '.pc.in',
-              target       = name.lower() + '.pc',
+              source       = '%s.pc.in' % name.lower(),
+              target       = target,
               install_path = os.path.join(bld.env['LIBDIR'], 'pkgconfig'),
               exec_prefix  = '${prefix}',
               PREFIX       = pkg_prefix,
@@ -308,6 +314,7 @@ def build_pc(bld, name, version, libs, subst_dict={}):
         libs = libs.split()
 
     subst_dict[name + '_VERSION'] = version
+    subst_dict[name + '_MAJOR_VERSION'] = version[0:version.find('.')]
     for i in libs:
         subst_dict[i + '_LIBS']   = link_flags(bld.env, i)
         lib_cflags = compile_flags(bld.env, i)
