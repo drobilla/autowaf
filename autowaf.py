@@ -451,6 +451,8 @@ def post_test(ctx, appname, dirs=['./src']):
         subprocess.call('genhtml -o coverage coverage-stripped.lcov'.split(),
                         stdout=coverage_log, stderr=coverage_log)
 
+    except:
+        Logs.warn('Failed to run lcov, no coverage report will be generated')
     finally:
         coverage_stripped_lcov.close()
         coverage_lcov.close()
