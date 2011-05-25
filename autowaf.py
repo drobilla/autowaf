@@ -87,7 +87,7 @@ def set_options(opt):
                        help="LV2 bundles [Default: LIBDIR/lv2]")
     g_step = 1
 
-def check_header(conf, name, define='', mandatory=False):
+def check_header(conf, name, define='', mandatory=True):
     "Check for a header"
     includes = '' # search default system include paths
     if sys.platform == "darwin":
