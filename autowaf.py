@@ -88,20 +88,15 @@ def set_options(opt):
     g_step = 1
 
 def check_header(conf, name, define='', mandatory=False):
-    "Check for a header iff it hasn't been checked for yet"
-    if type(conf.env['AUTOWAF_HEADERS']) != dict:
-        conf.env['AUTOWAF_HEADERS'] = {}
-
-    checked = conf.env['AUTOWAF_HEADERS']
-    if not name in checked:
-        checked[name] = True
-        includes = '' # search default system include paths
-        if sys.platform == "darwin":
-            includes = '/opt/local/include'
-        if define != '':
-            conf.check_cxx(header_name=name, includes=includes, define_name=define, mandatory=mandatory)
-        else:
-            conf.check_cxx(header_name=name, includes=includes, mandatory=mandatory)
+    "Check for a header"
+    includes = '' # search default system include paths
+    if sys.platform == "darwin":
+        includes = '/opt/local/include'
+    if define != '':
+        conf.check_cxx(header_name=name, includes=includes,
+                       define_name=define, mandatory=mandatory)
+    else:
+        conf.check_cxx(header_name=name, includes=includes, mandatory=mandatory)
 
 def nameify(name):
     return name.replace('/', '_').replace('++', 'PP').replace('-', '_').replace('.', '_')
