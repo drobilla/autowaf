@@ -34,8 +34,6 @@ def set_options(opt):
     global g_step
     if g_step > 0:
         return
-    opt.load('compiler_cc')
-    opt.load('compiler_cxx')
 
     # Install directory options
     dirs_options = opt.add_option_group('Installation directories', '')
@@ -87,16 +85,25 @@ def set_options(opt):
                        help="LV2 bundles [Default: LIBDIR/lv2]")
     g_step = 1
 
-def check_header(conf, name, define='', mandatory=True):
+def check_header(conf, lang, name, define='', mandatory=True):
     "Check for a header"
     includes = '' # search default system include paths
     if sys.platform == "darwin":
         includes = '/opt/local/include'
-    if define != '':
-        conf.check_cxx(header_name=name, includes=includes,
-                       define_name=define, mandatory=mandatory)
+
+    if lang == 'c':
+        check_func = conf.check_cc
+    elif lang == 'cxx':
+        check_func = conf.check_cxx
     else:
-        conf.check_cxx(header_name=name, includes=includes, mandatory=mandatory)
+        Logs.error("Unknown header language `%s'" % lang)
+        return
+
+    if define != '':
+        check_func(header_name=name, includes=includes,
+                   define_name=define, mandatory=mandatory)
+    else:
+        check_func(header_name=name, includes=includes, mandatory=mandatory)
 
 def nameify(name):
     return name.replace('/', '_').replace('++', 'PP').replace('-', '_').replace('.', '_')
@@ -134,10 +141,10 @@ def configure(conf):
         conf.env.append_value('CXXFLAGS', vals.split())
     print('')
     display_header('Global Configuration')
-    conf.load('compiler_cc')
-    conf.load('compiler_cxx')
+
     if Options.options.docs:
         conf.load('doxygen')
+
     conf.env['DOCS'] = Options.options.docs
     conf.env['DEBUG'] = Options.options.debug
     conf.env['STRICT'] = Options.options.strict
