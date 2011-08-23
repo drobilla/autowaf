@@ -208,11 +208,14 @@ def configure(conf):
         conf.env.append_value('CXXFLAGS', [ '-ansi', '-Woverloaded-virtual', '-Wnon-virtual-dtor'])
         append_cxx_flags('-Wall -Wextra -Wno-unused-parameter')
 
-    append_cxx_flags('-DPIC -fshow-column')
-    append_cxx_flags('-I' + os.path.abspath('build'))
-
+    append_cxx_flags('-DPIC')
     if sys.platform != 'win32':
         append_cxx_flags('-fPIC')
+
+    append_cxx_flags('-fshow-column')
+
+    conf.env.prepend_value('CFLAGS', '-I' + os.path.abspath('.'))
+    conf.env.prepend_value('CXXFLAGS', '-I' + os.path.abspath('.'))
 
     display_msg(conf, "Install prefix", conf.env['PREFIX'])
     display_msg(conf, "Debuggable build", str(conf.env['DEBUG']))
