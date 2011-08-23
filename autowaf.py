@@ -256,7 +256,7 @@ def use_lib(bld, obj, libs):
             inc_flag = '-iquote ' + os.path.join(abssrcdir, l.lower())
             for f in ['CFLAGS', 'CXXFLAGS']:
                 if not inc_flag in bld.env[f]:
-                    bld.env.append_value(f, inc_flag)
+                    bld.env.prepend_value(f, inc_flag)
         else:
             append_property(obj, 'uselib', ' ' + l)
 
