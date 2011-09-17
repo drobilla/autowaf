@@ -208,10 +208,6 @@ def configure(conf):
         conf.env.append_value('CXXFLAGS', [ '-ansi', '-Woverloaded-virtual', '-Wnon-virtual-dtor'])
         append_cxx_flags('-Wall -Wextra -Wno-unused-parameter')
 
-    append_cxx_flags('-DPIC')
-    if sys.platform != 'win32':
-        append_cxx_flags('-fPIC')
-
     append_cxx_flags('-fshow-column')
 
     conf.env.prepend_value('CFLAGS', '-I' + os.path.abspath('.'))
