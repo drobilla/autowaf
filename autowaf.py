@@ -373,7 +373,7 @@ def build_version_files(header_path, source_path, domain, major, minor, micro):
     text += "int " + domain + "_minor_version = " + str(minor) + ";\n"
     text += "int " + domain + "_micro_version = " + str(micro) + ";\n"
     try:
-        o = file(source_path, 'w')
+        o = open(source_path, 'w')
         o.write(text)
         o.close()
     except IOError:
@@ -388,7 +388,7 @@ def build_version_files(header_path, source_path, domain, major, minor, micro):
     text += "extern int " + domain + "_micro_version;\n"
     text += "#endif /* __" + domain + "_version_h__ */\n"
     try:
-        o = file(header_path, 'w')
+        o = open(header_path, 'w')
         o.write(text)
         o.close()
     except IOError:
