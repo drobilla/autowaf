@@ -114,8 +114,9 @@ def define(conf, var_name, value):
 
 def check_pkg(conf, name, **args):
     "Check for a package iff it hasn't been checked for yet"
-    var_name = 'HAVE_' + nameify(args['uselib_store'])
+    var_name = 'CHECKED_' + nameify(args['uselib_store'])
     check = not var_name in conf.env
+    conf.env[var_name] = True
     if not check and 'atleast_version' in args:
         # Re-check if version is newer than previous check
         checked_version = conf.env['VERSION_' + name]
