@@ -168,7 +168,7 @@ def configure(conf):
     config_dir('DATADIR',    opts.datadir,    os.path.join(prefix, 'share'))
     config_dir('INCLUDEDIR', opts.includedir, os.path.join(prefix, 'include'))
     config_dir('LIBDIR',     opts.libdir,     os.path.join(prefix, 'lib'))
-    config_dir('MANDIR',     opts.mandir,     os.path.join(prefix, 'man'))
+    config_dir('MANDIR',     opts.mandir,     os.path.join(conf.env['DATADIR'], 'man'))
     config_dir('DOCDIR',     opts.docdir,     os.path.join(conf.env['DATADIR'], 'doc'))
 
     if Options.options.lv2dir:
