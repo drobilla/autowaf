@@ -302,6 +302,14 @@ def build_pc(bld, name, version, version_suffix, libs, subst_dict={}):
         target += '-' + version_suffix
     target += '.pc'
 
+    libdir = bld.env['LIBDIR']
+    if libdir.startswith(pkg_prefix):
+        libdir = libdir.replace(pkg_prefix, '${exec_prefix}')
+
+    includedir = bld.env['INCLUDEDIR']
+    if includedir.startswith(pkg_prefix):
+        includedir = includedir.replace(pkg_prefix, '${prefix}')
+
     obj = bld(features     = 'subst',
               source       = '%s.pc.in' % name.lower(),
               target       = target,
@@ -309,8 +317,8 @@ def build_pc(bld, name, version, version_suffix, libs, subst_dict={}):
               exec_prefix  = '${prefix}',
               PREFIX       = pkg_prefix,
               EXEC_PREFIX  = '${prefix}',
-              LIBDIR       = bld.env['LIBDIR'],
-              INCLUDEDIR   = bld.env['INCLUDEDIR'])
+              LIBDIR       = libdir,
+              INCLUDEDIR   = includedir)
 
     if type(libs) != list:
         libs = libs.split()
