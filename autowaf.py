@@ -114,18 +114,29 @@ def define(conf, var_name, value):
 
 def check_pkg(conf, name, **args):
     "Check for a package iff it hasn't been checked for yet"
+    class CheckType:
+        OPTIONAL=1
+        MANDATORY=2
     var_name = 'CHECKED_' + nameify(args['uselib_store'])
     check = not var_name in conf.env
-    conf.env[var_name] = True
+    mandatory = not 'mandatory' in args or args['mandatory']
     if not check and 'atleast_version' in args:
         # Re-check if version is newer than previous check
         checked_version = conf.env['VERSION_' + name]
         if checked_version and checked_version < args['atleast_version']:
             check = True;
+    if not check and mandatory and conf.env[var_name] == CheckType.OPTIONAL:
+        # Re-check if previous check was optional but this one is mandatory
+        check = True;
     if check:
         conf.check_cfg(package=name, args="--cflags --libs", **args)
         if 'atleast_version' in args:
             conf.env['VERSION_' + name] = args['atleast_version']
+    if mandatory:
+        conf.env[var_name] = CheckType.MANDATORY
+    else:
+        conf.env[var_name] = CheckType.OPTIONAL
+
 
 def normpath(path):
     if sys.platform == 'win32':
