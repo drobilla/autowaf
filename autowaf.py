@@ -114,6 +114,8 @@ def define(conf, var_name, value):
 
 def check_pkg(conf, name, **args):
     "Check for a package iff it hasn't been checked for yet"
+    if args['uselib_store'].lower() in conf.env['AUTOWAF_LOCAL_LIBS']:
+        return
     class CheckType:
         OPTIONAL=1
         MANDATORY=2
