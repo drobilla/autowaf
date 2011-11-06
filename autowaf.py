@@ -9,6 +9,7 @@
 import os
 import subprocess
 import sys
+import glob
 
 from waflib import Configure, Context, Logs, Node, Options, Task, Utils
 from waflib.TaskGen import feature, before, after
@@ -29,7 +30,7 @@ g_step = 0
 def include_config_h(self):
     self.env.append_value('INCPATHS', self.bld.bldnode.abspath())
 
-def set_options(opt):
+def set_options(opt, debug_by_default=False):
     "Add standard autowaf options if they havn't been added yet"
     global g_step
     if g_step > 0:
@@ -62,8 +63,12 @@ def set_options(opt):
                             help="HTML documentation [Default: DATADIR/doc]")
 
     # Build options
-    opt.add_option('--debug', action='store_true', default=False, dest='debug',
-                   help="Build debuggable binaries [Default: False]")
+    if debug_by_default:
+        opt.add_option('--optimize', action='store_false', default=True, dest='debug',
+                       help="Build optimized binaries [Default: False]")
+    else:
+        opt.add_option('--debug', action='store_true', default=False, dest='debug',
+                       help="Build debuggable binaries [Default: False]")
     opt.add_option('--grind', action='store_true', default=False, dest='grind',
                    help="Run tests in valgrind [Default: False]")
     opt.add_option('--strict', action='store_true', default=False, dest='strict',
@@ -418,6 +423,52 @@ def build_version_files(header_path, source_path, domain, major, minor, micro):
         sys.exit(-1)
 
     return None
+
+def build_i18n(bld, srcdir, dir, name, sources, copyright_holder=None):
+    pwd = os.getcwd()
+    os.chdir(os.path.join(srcdir, dir))
+
+    pot_file = '%s.pot' % name
+
+    args = [ 'xgettext',
+             '--keyword=_',
+             '--keyword=N_',
+             '--from-code=UTF-8',
+             '-o', pot_file ]
+
+    if copyright_holder:
+        args += [ '--copyright-holder="%s"' % copyright_holder ]
+
+    def msg(str):
+        sys.stdout.write(str + ' ')
+        sys.stdout.flush()
+
+    args += sources
+    msg('Updating ' + pot_file)
+    os.spawnvp(os.P_WAIT, 'xgettext', args)
+    
+    po_files = glob.glob('po/*.po')
+    languages = [ po.replace('.po', '') for po in po_files ]
+    
+    for po_file in po_files:
+        args = [ 'msgmerge',
+                 '--update',
+                 po_file,
+                 pot_file ]
+        msg('Updating ' + po_file)
+        os.spawnvp(os.P_WAIT, 'msgmerge', args)
+        
+    for po_file in po_files:
+        mo_file = po_file.replace('.po', '.mo')
+        args = [ 'msgfmt',
+                 '-c',
+                 '-f',
+                 '-o',
+                 mo_file,
+                 po_file ]
+        msg('Generating ' + po_file)
+        os.spawnvp(os.P_WAIT, 'msgfmt', args)
+    os.chdir(pwd)
 
 def cd_to_build_dir(ctx, appname):
     orig_dir  = os.path.abspath(os.curdir)
