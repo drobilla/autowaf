@@ -424,51 +424,59 @@ def build_version_files(header_path, source_path, domain, major, minor, micro):
 
     return None
 
-def build_i18n(bld, srcdir, dir, name, sources, copyright_holder=None):
-    pwd = os.getcwd()
-    os.chdir(os.path.join(srcdir, dir))
-
+def build_i18n_pot(bld, srcdir, dir, name, sources, copyright_holder=None):
+    Logs.info('Generating pot file from %s' % name)
     pot_file = '%s.pot' % name
 
-    args = [ 'xgettext',
-             '--keyword=_',
-             '--keyword=N_',
-             '--from-code=UTF-8',
-             '-o', pot_file ]
+    cmd = [ 'xgettext',
+            '--keyword=_',
+            '--keyword=N_',
+            '--keyword=S_',
+            '--from-code=UTF-8',
+            '-o', pot_file ]
 
     if copyright_holder:
-        args += [ '--copyright-holder="%s"' % copyright_holder ]
+        cmd += [ '--copyright-holder="%s"' % copyright_holder ]
 
-    def msg(str):
-        sys.stdout.write(str + ' ')
-        sys.stdout.flush()
+    cmd += sources
+    Logs.info('Updating ' + pot_file)
+    subprocess.call(cmd, cwd=os.path.join(srcdir, dir))
 
-    args += sources
-    msg('Updating ' + pot_file)
-    os.spawnvp(os.P_WAIT, 'xgettext', args)
-    
+def build_i18n_po(bld, srcdir, dir, name, sources, copyright_holder=None):
+    pwd = os.getcwd()
+    os.chdir(os.path.join(srcdir, dir))
+    pot_file = '%s.pot' % name
     po_files = glob.glob('po/*.po')
-    languages = [ po.replace('.po', '') for po in po_files ]
-    
     for po_file in po_files:
-        args = [ 'msgmerge',
-                 '--update',
-                 po_file,
-                 pot_file ]
-        msg('Updating ' + po_file)
-        os.spawnvp(os.P_WAIT, 'msgmerge', args)
-        
+        cmd = [ 'msgmerge',
+                '--update',
+                po_file,
+                pot_file ]
+        Logs.info('Updating ' + po_file)
+        subprocess.call(cmd)
+    os.chdir(pwd)
+
+def build_i18n_mo(bld, srcdir, dir, name, sources, copyright_holder=None):
+    pwd = os.getcwd()
+    os.chdir(os.path.join(srcdir, dir))
+    pot_file = '%s.pot' % name
+    po_files = glob.glob('po/*.po')
     for po_file in po_files:
         mo_file = po_file.replace('.po', '.mo')
-        args = [ 'msgfmt',
-                 '-c',
-                 '-f',
-                 '-o',
-                 mo_file,
-                 po_file ]
-        msg('Generating ' + po_file)
-        os.spawnvp(os.P_WAIT, 'msgfmt', args)
+        cmd = [ 'msgfmt',
+                '-c',
+                '-f',
+                '-o',
+                mo_file,
+                po_file ]
+        Logs.info('Generating ' + po_file)
+        subprocess.call(cmd)
     os.chdir(pwd)
+
+def build_i18n(bld, srcdir, dir, name, sources, copyright_holder=None):
+    build_i18n_pot(bld, srcdir, dir, name, sources, copyright_holder)
+    build_i18n_po(bld, srcdir, dir, name, sources, copyright_holder)
+    build_i18n_mo(bld, srcdir, dir, name, sources, copyright_holder)
 
 def cd_to_build_dir(ctx, appname):
     orig_dir  = os.path.abspath(os.curdir)
