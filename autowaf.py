@@ -500,11 +500,12 @@ def pre_test(ctx, appname, dirs=['./src']):
     cd_to_build_dir(ctx, appname)
     clear_log = open('lcov-clear.log', 'w')
     try:
-        # Clear coverage data
-        subprocess.call(('lcov %s -z' % diropts).split(),
-                        stdout=clear_log, stderr=clear_log)
-    except:
-        Logs.warn('Failed to run lcov, no coverage report will be generated')
+        try:
+            # Clear coverage data
+            subprocess.call(('lcov %s -z' % diropts).split(),
+                            stdout=clear_log, stderr=clear_log)
+        except:
+            Logs.warn('Failed to run lcov, no coverage report will be generated')
     finally:
         clear_log.close()
 
@@ -516,25 +517,26 @@ def post_test(ctx, appname, dirs=['./src']):
     coverage_lcov          = open('coverage.lcov', 'w')
     coverage_stripped_lcov = open('coverage-stripped.lcov', 'w')
     try:
-        base = '.'
-        if g_is_child:
-            base = '..'
-        # Generate coverage data
-        subprocess.call(('lcov -c %s -b %s' % (diropts, base)).split(),
-                        stdout=coverage_lcov, stderr=coverage_log)
-
-        # Strip unwanted stuff
-        subprocess.call('lcov --remove coverage.lcov *boost* c++*'.split(),
-                        stdout=coverage_stripped_lcov, stderr=coverage_log)
-
-        # Generate HTML coverage output
-        if not os.path.isdir('./coverage'):
-            os.makedirs('./coverage')
-        subprocess.call('genhtml -o coverage coverage-stripped.lcov'.split(),
-                        stdout=coverage_log, stderr=coverage_log)
-
-    except:
-        Logs.warn('Failed to run lcov, no coverage report will be generated')
+        try:
+            base = '.'
+            if g_is_child:
+                base = '..'
+            # Generate coverage data
+            subprocess.call(('lcov -c %s -b %s' % (diropts, base)).split(),
+                            stdout=coverage_lcov, stderr=coverage_log)
+    
+            # Strip unwanted stuff
+            subprocess.call('lcov --remove coverage.lcov *boost* c++*'.split(),
+                            stdout=coverage_stripped_lcov, stderr=coverage_log)
+    
+            # Generate HTML coverage output
+            if not os.path.isdir('./coverage'):
+                os.makedirs('./coverage')
+            subprocess.call('genhtml -o coverage coverage-stripped.lcov'.split(),
+                            stdout=coverage_log, stderr=coverage_log)
+    
+        except:
+            Logs.warn('Failed to run lcov, no coverage report will be generated')
     finally:
         coverage_stripped_lcov.close()
         coverage_lcov.close()
