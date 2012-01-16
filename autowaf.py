@@ -227,7 +227,8 @@ def configure(conf):
         conf.env.append_value('CXXFLAGS', [ '-ansi', '-Woverloaded-virtual', '-Wnon-virtual-dtor'])
         append_cxx_flags('-Wall -Wextra -Wno-unused-parameter')
 
-    append_cxx_flags('-fshow-column')
+    if not conf.env['MSVC_COMPILER']:
+        append_cxx_flags('-fshow-column')
 
     conf.env.prepend_value('CFLAGS', '-I' + os.path.abspath('.'))
     conf.env.prepend_value('CXXFLAGS', '-I' + os.path.abspath('.'))
