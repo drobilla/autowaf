@@ -582,9 +582,13 @@ def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src'], name='*'):
         Logs.pprint('RED', '** FAIL: %d %s.%s tests failed' % (failures, appname, name))
 
 def run_ldconfig(ctx):
-    if ctx.cmd == 'install':
-        print('Running /sbin/ldconfig')
+    if (ctx.cmd == 'install'
+        and not ctx.env['RAN_LDCONFIG']
+        and ctx.env['LIBDIR']
+        and not os.environ.has_key('DESTDIR')):
         try:
-            os.popen("/sbin/ldconfig")
+            Logs.info("Waf: Running `/sbin/ldconfig %s'" % ctx.env['LIBDIR'])
+            subprocess.call(['/sbin/ldconfig', ctx.env['LIBDIR']])
+            ctx.env['RAN_LDCONFIG'] = True
         except:
-            Logs.error('Error running ldconfig, libraries may not be linkable')
+            pass
