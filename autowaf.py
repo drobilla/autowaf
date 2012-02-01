@@ -483,18 +483,18 @@ def cd_to_build_dir(ctx, appname):
     orig_dir  = os.path.abspath(os.curdir)
     top_level = (len(ctx.stack_path) > 1)
     if top_level:
-        os.chdir('./build/' + appname)
+        os.chdir(os.path.join('build', appname))
     else:
-        os.chdir('./build')
+        os.chdir('build')
     Logs.pprint('GREEN', "Waf: Entering directory `%s'" % os.path.abspath(os.getcwd()))
 
 def cd_to_orig_dir(ctx, child):
     if child:
-        os.chdir('../..')
+        os.chdir(os.path.join('..', '..'))
     else:
         os.chdir('..')
 
-def pre_test(ctx, appname, dirs=['./src']):
+def pre_test(ctx, appname, dirs=['src']):
     diropts  = ''
     for i in dirs:
         diropts += ' -d ' + i
@@ -510,7 +510,7 @@ def pre_test(ctx, appname, dirs=['./src']):
     finally:
         clear_log.close()
 
-def post_test(ctx, appname, dirs=['./src']):
+def post_test(ctx, appname, dirs=['src']):
     diropts  = ''
     for i in dirs:
         diropts += ' -d ' + i
@@ -531,8 +531,8 @@ def post_test(ctx, appname, dirs=['./src']):
                             stdout=coverage_stripped_lcov, stderr=coverage_log)
     
             # Generate HTML coverage output
-            if not os.path.isdir('./coverage'):
-                os.makedirs('./coverage')
+            if not os.path.isdir('coverage'):
+                os.makedirs('coverage')
             subprocess.call('genhtml -o coverage coverage-stripped.lcov'.split(),
                             stdout=coverage_log, stderr=coverage_log)
     
@@ -553,7 +553,7 @@ def post_test(ctx, appname, dirs=['./src']):
     Logs.pprint('BOLD', 'Coverage:', sep='')
     print('<file://%s>\n\n' % os.path.abspath('coverage/index.html'))
 
-def run_tests(ctx, appname, tests, desired_status=0, dirs=['./src'], name='*'):
+def run_tests(ctx, appname, tests, desired_status=0, dirs=['src'], name='*'):
     failures = 0
     diropts  = ''
     for i in dirs:
