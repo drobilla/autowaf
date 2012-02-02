@@ -203,7 +203,7 @@ def configure(conf):
             if sys.platform == "darwin":
                 conf.env['LV2DIR'] = '/Library/Audio/Plug-Ins/LV2'
             elif sys.platform == "win32":
-                conf.env['LV2DIR'] = os.path.join(os.getenv('PROGRAMFILES'), 'LV2')
+                conf.env['LV2DIR'] = os.path.join(os.getenv('COMMONPROGRAMFILES'), 'LV2')
             else:
                 conf.env['LV2DIR'] = os.path.join(conf.env['LIBDIR'], 'lv2')
 
