@@ -593,3 +593,53 @@ def run_ldconfig(ctx):
             ctx.env['RAN_LDCONFIG'] = True
         except:
             pass
+
+def write_news(name, in_files, out_file):
+    import rdflib
+    import textwrap
+    from time import strftime, strptime
+
+    doap = rdflib.Namespace('http://usefulinc.com/ns/doap#')
+    dcs  = rdflib.Namespace('http://ontologi.es/doap-changeset#')
+    rdfs = rdflib.Namespace('http://www.w3.org/2000/01/rdf-schema#')
+    foaf = rdflib.Namespace('http://xmlns.com/foaf/0.1/')
+    rdf  = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
+    m    = rdflib.ConjunctiveGraph()
+
+    try:
+        for i in in_files:
+            m.parse(i, format='n3')
+    except:
+        Logs.warn('Error parsing data, unable to generate NEWS')
+        return
+
+    proj    = m.value(None, rdf.type, doap.Project)
+    entries = {}
+    for r in m.triples([proj, doap.release, None]):
+        release   = r[2]
+        revision  = m.value(release, doap.revision, None)
+        date      = m.value(release, doap.created, None)
+        blamee    = m.value(release, dcs.blame, None)
+        changeset = m.value(release, dcs.changeset, None)
+
+        if revision and date and blamee and changeset:
+            entry = '%s (%s) stable;\n' % (name, revision)
+
+            for i in m.triples([changeset, dcs.item, None]):
+                entry += '\n  * ' + '\n    '.join(
+                    textwrap.wrap(m.value(i[2], rdfs.label, None), width=79))
+
+            entry += '\n\n -- %s <%s>  %s\n\n' % (
+                m.value(blamee, foaf.name, None),
+                m.value(blamee, foaf.mbox, None).replace('mailto:', ''),
+                strftime('%a, %d %b %Y %H:%M:%S +0000', strptime(date, '%Y-%m-%d')))
+
+            entries[revision] = entry
+        else:
+            Logs.warn('Ignored incomplete %s release description' % name)
+
+    if len(entries) > 0:
+        news = open(out_file, 'w')
+        for e in sorted(entries.keys(), reverse=True):
+            news.write(entries[e])
+        news.close()
