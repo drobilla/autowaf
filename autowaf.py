@@ -613,7 +613,11 @@ def write_news(name, in_files, out_file):
         Logs.warn('Error parsing data, unable to generate NEWS')
         return
 
-    proj    = m.value(None, rdf.type, doap.Project)
+    proj = m.value(None, rdf.type, doap.Project)
+    for f in m.triples([proj, rdfs.seeAlso, None]):
+        if f[2].endswith('.ttl'):
+            m.parse(f[2], format='n3')
+
     entries = {}
     for r in m.triples([proj, doap.release, None]):
         release   = r[2]
@@ -629,9 +633,15 @@ def write_news(name, in_files, out_file):
                 entry += '\n  * ' + '\n    '.join(
                     textwrap.wrap(m.value(i[2], rdfs.label, None), width=79))
 
-            entry += '\n\n -- %s <%s>  %s\n\n' % (
-                m.value(blamee, foaf.name, None),
-                m.value(blamee, foaf.mbox, None).replace('mailto:', ''),
+            entry += '\n\n --'
+
+            blamee_name = m.value(blamee, foaf.name, None)
+            blamee_mbox = m.value(blamee, foaf.mbox, None)
+            if blamee_name and blamee_mbox:
+                entry += ' %s <%s>' % (blamee_name,
+                                       blamee_mbox.replace('mailto:', ''))
+                
+            entry += '  %s\n\n' % (
                 strftime('%a, %d %b %Y %H:%M:%S +0000', strptime(date, '%Y-%m-%d')))
 
             entries[revision] = entry
