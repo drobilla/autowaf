@@ -510,7 +510,7 @@ def pre_test(ctx, appname, dirs=['src']):
     finally:
         clear_log.close()
 
-def post_test(ctx, appname, dirs=['src']):
+def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
     diropts  = ''
     for i in dirs:
         diropts += ' -d ' + i
@@ -522,13 +522,15 @@ def post_test(ctx, appname, dirs=['src']):
             base = '.'
             if g_is_child:
                 base = '..'
+
             # Generate coverage data
             subprocess.call(('lcov -c %s -b %s' % (diropts, base)).split(),
                             stdout=coverage_lcov, stderr=coverage_log)
     
             # Strip unwanted stuff
-            subprocess.call('lcov --remove coverage.lcov *boost* c++*'.split(),
-                            stdout=coverage_stripped_lcov, stderr=coverage_log)
+            subprocess.call(
+                ['lcov', '--remove', 'coverage.lcov'] + remove,
+                stdout=coverage_stripped_lcov, stderr=coverage_log)
     
             # Generate HTML coverage output
             if not os.path.isdir('coverage'):
