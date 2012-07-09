@@ -353,6 +353,49 @@ def build_pc(bld, name, version, version_suffix, libs, subst_dict={}):
 
     obj.__dict__.update(subst_dict)
 
+def build_dir(name, subdir):
+    if is_child():
+        return os.path.join('build', name, subdir)
+    else:
+        return os.path.join('build', subdir)
+
+# Clean up messy Doxygen documentation after it is built
+def make_simple_dox(name):
+    name = name.lower()
+    NAME = name.upper()
+    try:
+        top = os.getcwd()
+        os.chdir(build_dir(name, 'doc/html'))
+        page = 'group__%s.html' % name
+        if not os.path.exists(page):
+            return
+        for i in [
+            ['%s_API ' % NAME, ''],
+            ['group__%s.html' % name, ''],
+            ['&#160;', ''],
+            ['<script.*><\/script>', ''],
+            ['<link href=\"tabs.css\" rel=\"stylesheet\" type=\"text\/css\"\/>',
+             ''],
+            ['<img class=\"footer\" src=\"doxygen.png\" alt=\"doxygen\"\/>',
+             'Doxygen']]:
+            os.system("sed -i 's/%s/%s/g' %s" % (i[0], i[1], page))
+        os.rename('group__%s.html' % name, 'index.html')
+        for i in (glob.glob('*.png') +
+                  glob.glob('*.html') +
+                  glob.glob('*.js') +
+                  glob.glob('*.css')):
+            if i != 'index.html' and i != 'style.css':
+                os.remove(i)
+        os.chdir(top)
+        os.chdir(build_dir(name, 'doc/man/man3'))
+        for i in glob.glob('*.3'):
+            os.system("sed -i 's/%s_API //' %s" % (NAME, i))
+        for i in glob.glob('_*'):
+            os.remove(i)
+        os.chdir(top)
+    except Exception as e:
+        Logs.error("Failed to fix up %s documentation: %s" % (name, e))
+
 # Doxygen API documentation
 def build_dox(bld, name, version, srcdir, blddir):
     if not bld.env['DOCS']:
@@ -388,10 +431,10 @@ def build_dox(bld, name, version, srcdir, blddir):
 
     bld.install_files('${DOCDIR}/%s/html' % name.lower(),
                       bld.path.get_bld().ant_glob('doc/html/*'))
-    bld.install_files('${MANDIR}/man1',
-                      bld.path.get_bld().ant_glob('doc/man/man1/*'))
-    bld.install_files('${MANDIR}/man3',
-                      bld.path.get_bld().ant_glob('doc/man/man3/*'))
+    for i in range(1, 8):
+        bld.install_files('${MANDIR}/man%d' % i,
+                          bld.path.get_bld().ant_glob('doc/man/man%d/*' % i,
+                                                      excl='**/_*'))
 
 # Version code file generation
 def build_version_files(header_path, source_path, domain, major, minor, micro):
