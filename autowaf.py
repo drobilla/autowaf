@@ -632,7 +632,8 @@ def run_ldconfig(ctx):
     if (ctx.cmd == 'install'
         and not ctx.env['RAN_LDCONFIG']
         and ctx.env['LIBDIR']
-        and not 'DESTDIR' in os.environ):
+        and not 'DESTDIR' in os.environ
+        and not Options.options.destdir):
         try:
             Logs.info("Waf: Running `/sbin/ldconfig %s'" % ctx.env['LIBDIR'])
             subprocess.call(['/sbin/ldconfig', ctx.env['LIBDIR']])
