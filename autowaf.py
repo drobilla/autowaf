@@ -374,6 +374,7 @@ def make_simple_dox(name):
             ['group__%s.html' % name, ''],
             ['&#160;', ''],
             ['<script.*><\/script>', ''],
+            ['<hr\/><a name="details" id="details"><\/a><h2>.*<\/h2>', ''],
             ['<link href=\"tabs.css\" rel=\"stylesheet\" type=\"text\/css\"\/>',
              ''],
             ['<img class=\"footer\" src=\"doxygen.png\" alt=\"doxygen\"\/>',
