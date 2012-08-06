@@ -65,29 +65,24 @@ def set_options(opt, debug_by_default=False):
     # Build options
     if debug_by_default:
         opt.add_option('--optimize', action='store_false', default=True, dest='debug',
-                       help="Build optimized binaries [Default: False]")
+                       help="Build optimized binaries")
     else:
         opt.add_option('--debug', action='store_true', default=False, dest='debug',
-                       help="Build debuggable binaries [Default: False]")
+                       help="Build debuggable binaries")
     opt.add_option('--grind', action='store_true', default=False, dest='grind',
-                   help="Run tests in valgrind [Default: False]")
+                   help="Run tests in valgrind")
     opt.add_option('--strict', action='store_true', default=False, dest='strict',
-                   help="Use strict compiler flags and show all warnings [Default: False]")
+                   help="Use strict compiler flags and show all warnings")
     opt.add_option('--docs', action='store_true', default=False, dest='docs',
-                   help="Build documentation - requires doxygen [Default: False]")
+                   help="Build documentation - requires doxygen")
 
     # LV2 options
     opt.add_option('--lv2-user', action='store_true', default=False, dest='lv2_user',
-                   help="Install LV2 bundles to user-local location [Default: False]")
-    if sys.platform == "darwin":
-        opt.add_option('--lv2dir', type='string',
-                       help="LV2 bundles [Default: /Library/Audio/Plug-Ins/LV2]")
-    elif sys.platform == "win32":
-        opt.add_option('--lv2dir', type='string',
-                       help="LV2 bundles [Default: C:\Program Files\LV2]")
-    else:
-        opt.add_option('--lv2dir', type='string',
-                       help="LV2 bundles [Default: LIBDIR/lv2]")
+                   help="Install LV2 bundles to user location")
+    opt.add_option('--lv2-system', action='store_true', default=False, dest='lv2_system',
+                   help="Install LV2 bundles to system location")
+    dirs_options.add_option('--lv2dir', type='string',
+                            help="LV2 bundles [Default: LIBDIR/lv2]")
     g_step = 1
 
 def check_header(conf, lang, name, define='', mandatory=True):
@@ -147,7 +142,7 @@ def check_pkg(conf, name, **args):
 
 def normpath(path):
     if sys.platform == 'win32':
-        return os.path.normpath(path).replace('\\', '\\\\')
+        return os.path.normpath(path).replace('\\', '/')
     else:
         return os.path.normpath(path)
 
@@ -167,10 +162,7 @@ def configure(conf):
     conf.env['DOCS'] = Options.options.docs
     conf.env['DEBUG'] = Options.options.debug
     conf.env['STRICT'] = Options.options.strict
-    conf.env['PREFIX'] = os.path.normpath(os.path.abspath(os.path.expanduser(conf.env['PREFIX'])))
-
-    if sys.platform == 'win32':
-        conf.env['PREFIX'] = conf.env['PREFIX'].replace('\\', '\\\\')
+    conf.env['PREFIX'] = normpath(os.path.abspath(os.path.expanduser(conf.env['PREFIX'])))
 
     def config_dir(var, opt, default):
         if opt:
@@ -191,21 +183,24 @@ def configure(conf):
 
     if Options.options.lv2dir:
         conf.env['LV2DIR'] = Options.options.lv2dir
-    else:
-        if Options.options.lv2_user:
-            if sys.platform == "darwin":
-                conf.env['LV2DIR'] = os.path.join(os.getenv('HOME'), 'Library/Audio/Plug-Ins/LV2')
-            elif sys.platform == "win32":
-                conf.env['LV2DIR'] = os.path.join(os.getenv('APPDATA'), 'LV2')
-            else:
-                conf.env['LV2DIR'] = os.path.join(os.getenv('HOME'), '.lv2')
+    elif Options.options.lv2_user:
+        if sys.platform == "darwin":
+            conf.env['LV2DIR'] = os.path.join(os.getenv('HOME'), 'Library/Audio/Plug-Ins/LV2')
+        elif sys.platform == "win32":
+            conf.env['LV2DIR'] = os.path.join(os.getenv('APPDATA'), 'LV2')
         else:
-            if sys.platform == "darwin":
-                conf.env['LV2DIR'] = '/Library/Audio/Plug-Ins/LV2'
-            elif sys.platform == "win32":
-                conf.env['LV2DIR'] = os.path.join(os.getenv('COMMONPROGRAMFILES'), 'LV2')
-            else:
-                conf.env['LV2DIR'] = os.path.join(conf.env['LIBDIR'], 'lv2')
+            conf.env['LV2DIR'] = os.path.join(os.getenv('HOME'), '.lv2')
+    elif Options.options.lv2_system:
+        if sys.platform == "darwin":
+            conf.env['LV2DIR'] = '/Library/Audio/Plug-Ins/LV2'
+        elif sys.platform == "win32":
+            conf.env['LV2DIR'] = os.path.join(os.getenv('COMMONPROGRAMFILES'), 'LV2')
+        else:
+            conf.env['LV2DIR'] = os.path.join(conf.env['LIBDIR'], 'lv2')
+    else:
+        conf.env['LV2DIR'] = os.path.join(conf.env['LIBDIR'], 'lv2')
+
+    conf.env['LV2DIR'] = normpath(conf.env['LV2DIR'])
 
     if Options.options.docs:
         doxygen = conf.find_program('doxygen')
