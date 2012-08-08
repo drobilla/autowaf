@@ -236,6 +236,13 @@ def configure(conf):
 
     g_step = 2
 
+def set_c99_mode(conf):
+    if conf.env.MSVC_COMPILER:
+        # MSVC has no hope or desire to compile C99, just compile as C++
+        conf.env.append_unique('CFLAGS', ['-TP', '-MD'])
+    else:
+        conf.env.append_unique('CFLAGS', '-std=c99')
+
 def set_local_lib(conf, name, has_objects):
     var_name = 'HAVE_' + nameify(name.upper())
     define(conf, var_name, 1)
