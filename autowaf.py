@@ -73,6 +73,8 @@ def set_options(opt, debug_by_default=False):
                    help="Run tests in valgrind")
     opt.add_option('--strict', action='store_true', default=False, dest='strict',
                    help="Use strict compiler flags and show all warnings")
+    opt.add_option('--ultra-strict', action='store_true', default=False, dest='ultra_strict',
+                   help="Use even stricter compiler flags (likely to trigger many warnings in library headers)")
     opt.add_option('--docs', action='store_true', default=False, dest='docs',
                    help="Build documentation - requires doxygen")
 
@@ -150,9 +152,9 @@ def configure(conf):
     global g_step
     if g_step > 1:
         return
-    def append_cxx_flags(vals):
-        conf.env.append_value('CFLAGS', vals.split())
-        conf.env.append_value('CXXFLAGS', vals.split())
+    def append_cxx_flags(flags):
+        conf.env.append_value('CFLAGS', flags)
+        conf.env.append_value('CXXFLAGS', flags)
     print('')
     display_header('Global Configuration')
 
@@ -161,7 +163,6 @@ def configure(conf):
 
     conf.env['DOCS'] = Options.options.docs
     conf.env['DEBUG'] = Options.options.debug
-    conf.env['STRICT'] = Options.options.strict
     conf.env['PREFIX'] = normpath(os.path.abspath(os.path.expanduser(conf.env['PREFIX'])))
 
     def config_dir(var, opt, default):
@@ -212,25 +213,43 @@ def configure(conf):
             conf.fatal("Graphviz (dot) is required to build with --docs")
 
     if Options.options.debug:
-        conf.env['CFLAGS'] = [ '-O0', '-g' ]
-        conf.env['CXXFLAGS'] = [ '-O0',  '-g' ]
+        conf.env['CFLAGS'] = ['-O0', '-g']
+        conf.env['CXXFLAGS'] = ['-O0',  '-g']
     else:
-        append_cxx_flags('-DNDEBUG')
+        append_cxx_flags(['-DNDEBUG'])
+
+    if Options.options.ultra_strict:
+        Options.options.strict = True
+        conf.env.append_value('CFLAGS', ['-Wredundant-decls',
+                                         '-Wstrict-prototypes',
+                                         '-Wmissing-prototypes'])
 
     if Options.options.strict:
-        conf.env.append_value('CFLAGS', [ '-std=c99', '-pedantic' ])
-        conf.env.append_value('CXXFLAGS', [ '-ansi', '-Woverloaded-virtual', '-Wnon-virtual-dtor'])
-        append_cxx_flags('-Wall -Wextra -Wno-unused-parameter')
+        conf.env.append_value('CFLAGS', ['-pedantic', '-Wshadow'])
+        conf.env.append_value('CXXFLAGS', ['-ansi',
+                                           '-Wnon-virtual-dtor',
+                                           '-Woverloaded-virtual'])
+        append_cxx_flags(['-Wall',
+                          '-Wcast-align',
+                          '-Wextra',
+                          '-Wlogical-op',
+                          '-Wmissing-declarations',
+                          '-Wno-unused-parameter',
+                          '-Wstrict-overflow',
+                          '-Wsuggest-attribute=noreturn',
+                          '-Wundef',
+                          '-Wunsafe-loop-optimizations',
+                          '-Wwrite-strings',
+                          '-fstrict-overflow'])
 
     if not conf.env['MSVC_COMPILER']:
-        append_cxx_flags('-fshow-column')
+        append_cxx_flags(['-fshow-column'])
 
     conf.env.prepend_value('CFLAGS', '-I' + os.path.abspath('.'))
     conf.env.prepend_value('CXXFLAGS', '-I' + os.path.abspath('.'))
 
     display_msg(conf, "Install prefix", conf.env['PREFIX'])
     display_msg(conf, "Debuggable build", str(conf.env['DEBUG']))
-    display_msg(conf, "Strict compiler flags", str(conf.env['STRICT']))
     display_msg(conf, "Build documentation", str(conf.env['DOCS']))
     print('')
 
@@ -475,15 +494,15 @@ def build_i18n_pot(bld, srcdir, dir, name, sources, copyright_holder=None):
     Logs.info('Generating pot file from %s' % name)
     pot_file = '%s.pot' % name
 
-    cmd = [ 'xgettext',
+    cmd = ['xgettext',
             '--keyword=_',
             '--keyword=N_',
             '--keyword=S_',
             '--from-code=UTF-8',
-            '-o', pot_file ]
+            '-o', pot_file]
 
     if copyright_holder:
-        cmd += [ '--copyright-holder="%s"' % copyright_holder ]
+        cmd += ['--copyright-holder="%s"' % copyright_holder]
 
     cmd += sources
     Logs.info('Updating ' + pot_file)
@@ -495,10 +514,10 @@ def build_i18n_po(bld, srcdir, dir, name, sources, copyright_holder=None):
     pot_file = '%s.pot' % name
     po_files = glob.glob('po/*.po')
     for po_file in po_files:
-        cmd = [ 'msgmerge',
-                '--update',
-                po_file,
-                pot_file ]
+        cmd = ['msgmerge',
+               '--update',
+               po_file,
+               pot_file]
         Logs.info('Updating ' + po_file)
         subprocess.call(cmd)
     os.chdir(pwd)
@@ -510,12 +529,12 @@ def build_i18n_mo(bld, srcdir, dir, name, sources, copyright_holder=None):
     po_files = glob.glob('po/*.po')
     for po_file in po_files:
         mo_file = po_file.replace('.po', '.mo')
-        cmd = [ 'msgfmt',
-                '-c',
-                '-f',
-                '-o',
-                mo_file,
-                po_file ]
+        cmd = ['msgfmt',
+               '-c',
+               '-f',
+               '-o',
+               mo_file,
+               po_file]
         Logs.info('Generating ' + po_file)
         subprocess.call(cmd)
     os.chdir(pwd)
