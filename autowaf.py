@@ -672,7 +672,7 @@ def run_ldconfig(ctx):
         except:
             pass
 
-def write_news(name, in_files, out_file):
+def write_news(name, in_files, out_file, top_entries=None):
     import rdflib
     import textwrap
     from time import strftime, strptime
@@ -703,13 +703,19 @@ def write_news(name, in_files, out_file):
         date      = m.value(release, doap.created, None)
         blamee    = m.value(release, dcs.blame, None)
         changeset = m.value(release, dcs.changeset, None)
+        dist      = m.value(release, doap['file-release'], None)
 
         if revision and date and blamee and changeset:
             entry = '%s (%s) stable;\n' % (name, revision)
 
             for i in m.triples([changeset, dcs.item, None]):
-                entry += '\n  * ' + '\n    '.join(
-                    textwrap.wrap(m.value(i[2], rdfs.label, None), width=79))
+                item = textwrap.wrap(m.value(i[2], rdfs.label, None), width=79)
+                entry += '\n  * ' + '\n    '.join(item)
+                if dist and top_entries is not None:
+                    if not str(dist) in top_entries:
+                        top_entries[str(dist)] = []
+                    top_entries[str(dist)] += [
+                        '%s: %s' % (name, '\n    '.join(item))]
 
             entry += '\n\n --'
 
