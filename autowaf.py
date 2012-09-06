@@ -232,15 +232,25 @@ def configure(conf):
         append_cxx_flags(['-Wall',
                           '-Wcast-align',
                           '-Wextra',
-                          '-Wlogical-op',
                           '-Wmissing-declarations',
                           '-Wno-unused-parameter',
                           '-Wstrict-overflow',
-                          '-Wsuggest-attribute=noreturn',
                           '-Wundef',
-                          '-Wunsafe-loop-optimizations',
                           '-Wwrite-strings',
                           '-fstrict-overflow'])
+
+        if not conf.check_cc(fragment = '''
+#ifndef __clang__
+#error
+#endif
+int main() { return 0; }''',
+                         features  = 'c',
+                         mandatory = False,
+                         execute   = False,
+                         msg       = 'Checking for clang'):
+            append_cxx_flags(['-Wlogical-op',
+                              '-Wsuggest-attribute=noreturn',
+                              '-Wunsafe-loop-optimizations'])
 
     if not conf.env['MSVC_COMPILER']:
         append_cxx_flags(['-fshow-column'])
@@ -419,7 +429,7 @@ def make_simple_dox(name):
         Logs.error("Failed to fix up %s documentation: %s" % (name, e))
 
 # Doxygen API documentation
-def build_dox(bld, name, version, srcdir, blddir):
+def build_dox(bld, name, version, srcdir, blddir, outdir=None):
     if not bld.env['DOCS']:
         return
 
@@ -451,7 +461,7 @@ def build_dox(bld, name, version, srcdir, blddir):
 
     docs.post()
 
-    bld.install_files('${DOCDIR}/%s/html' % name.lower(),
+    bld.install_files(os.path.join('${DOCDIR}', name.lower(), outdir, 'html'),
                       bld.path.get_bld().ant_glob('doc/html/*'))
     for i in range(1, 8):
         bld.install_files('${MANDIR}/man%d' % i,
