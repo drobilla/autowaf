@@ -136,7 +136,13 @@ def check_pkg(conf, name, **args):
         # Re-check if previous check was optional but this one is mandatory
         check = True;
     if check:
-        conf.check_cfg(package=name, args="--cflags --libs", **args)
+        found = None
+        if conf.env.PARDEBUG:
+            pargs = args
+            pargs['mandatory'] = False
+            found = conf.check_cfg(package=name + 'D', args="--cflags --libs", **pargs)
+        if not found:
+            conf.check_cfg(package=name, args="--cflags --libs", **args)
         if 'atleast_version' in args:
             conf.env['VERSION_' + name] = args['atleast_version']
     if mandatory:
