@@ -6,10 +6,10 @@
 #
 # Licensed under the GNU GPL v2 or later, see COPYING file for details.
 
+import glob
 import os
 import subprocess
 import sys
-import glob
 
 from waflib import Configure, Context, Logs, Node, Options, Task, Utils
 from waflib.TaskGen import feature, before, after
@@ -213,8 +213,12 @@ def configure(conf):
             conf.fatal("Graphviz (dot) is required to build with --docs")
 
     if Options.options.debug:
-        conf.env['CFLAGS'] = ['-O0', '-g']
-        conf.env['CXXFLAGS'] = ['-O0',  '-g']
+        if conf.env['MSVC_COMPILER']:
+            conf.env['CFLAGS']   = ['/Od', '/Zi']
+            conf.env['CXXFLAGS'] = ['/Od', '/Zi']
+        else:
+            conf.env['CFLAGS']   = ['-O0', '-g']
+            conf.env['CXXFLAGS'] = ['-O0',  '-g']
     else:
         append_cxx_flags(['-DNDEBUG'])
 
@@ -429,7 +433,7 @@ def make_simple_dox(name):
         Logs.error("Failed to fix up %s documentation: %s" % (name, e))
 
 # Doxygen API documentation
-def build_dox(bld, name, version, srcdir, blddir, outdir=None):
+def build_dox(bld, name, version, srcdir, blddir, outdir=''):
     if not bld.env['DOCS']:
         return
 
