@@ -69,6 +69,9 @@ def set_options(opt, debug_by_default=False):
     else:
         opt.add_option('--debug', action='store_true', default=False, dest='debug',
                        help="Build debuggable binaries")
+        opt.add_option('--pardebug', action='store_true', default=False, dest='pardebug',
+                       help="Build parallel-installable debuggable libraries with D suffix")
+
     opt.add_option('--grind', action='store_true', default=False, dest='grind',
                    help="Run tests in valgrind")
     opt.add_option('--strict', action='store_true', default=False, dest='strict',
@@ -162,7 +165,8 @@ def configure(conf):
         conf.load('doxygen')
 
     conf.env['DOCS'] = Options.options.docs
-    conf.env['DEBUG'] = Options.options.debug
+    conf.env['DEBUG'] = Options.options.debug or Options.options.pardebug
+    conf.env['PARDEBUG'] = Options.options.pardebug
     conf.env['PREFIX'] = normpath(os.path.abspath(os.path.expanduser(conf.env['PREFIX'])))
 
     def config_dir(var, opt, default):
@@ -311,6 +315,27 @@ def use_lib(bld, obj, libs):
         else:
             append_property(obj, 'uselib', ' ' + l)
 
+@feature('c')
+@before('apply_link')
+def version_lib(self):
+    if sys.platform == 'win32':
+        self.vnum = None  # Prevent waf from automatically appending -0
+    if self.env['PARDEBUG']:
+        applicable = ['cshlib', 'cxxshlib', 'cstlib', 'cxxstlib']
+        if [x for x in applicable if x in self.features]:
+            self.target = self.target + 'D'
+
+def set_lib_env(conf, name, version):
+    'Set up environment for local library as if found via pkg-config.'
+    NAME      = name.upper()
+    major_ver = version.split('.')[0]
+    conf.env['INCLUDES_' + NAME] = ['${INCLUDEDIR}/%s-%s' % (name, major_ver)]
+    conf.env['LIBPATH_' + NAME]  = [conf.env.LIBDIR]
+    if conf.env.PARDEBUG:
+        conf.env['LIB_' + NAME] = ['%s-%sD' % (name, major_ver)]
+    else:
+        conf.env['LIB_' + NAME] = ['%s-%s' % (name, major_ver)]
+
 def display_header(title):
     Logs.pprint('BOLD', title)
 
@@ -354,6 +379,10 @@ def build_pc(bld, name, version, version_suffix, libs, subst_dict={}):
     target = name.lower()
     if version_suffix != '':
         target += '-' + version_suffix
+
+    if bld.env['PARDEBUG']:
+        target += 'D'
+
     target += '.pc'
 
     libdir = bld.env['LIBDIR']
