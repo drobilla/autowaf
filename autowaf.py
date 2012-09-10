@@ -139,11 +139,12 @@ def check_pkg(conf, name, **args):
         found = None
         pkg_var_name = 'PKG_' + name.replace('-', '_')
         if conf.env.PARDEBUG:
-            pargs = args
-            pargs['mandatory'] = False
-            found = conf.check_cfg(package=name + 'D', args="--cflags --libs", **pargs)
+            args['mandatory'] = False  # Smash mandator arg
+            found = conf.check_cfg(package=name + 'D', args="--cflags --libs", **args)
             if found:
                 conf.env[pkg_var_name] = name + 'D'
+        if mandatory:
+            args['mandatory'] = True  # Unsmash mandatory arg
         if not found:
             conf.check_cfg(package=name, args="--cflags --libs", **args)
             if found:
