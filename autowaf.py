@@ -321,7 +321,7 @@ def use_lib(bld, obj, libs):
         else:
             append_property(obj, 'uselib', ' ' + l)
 
-@feature('c')
+@feature('c', 'cxx')
 @before('apply_link')
 def version_lib(self):
     if sys.platform == 'win32':
