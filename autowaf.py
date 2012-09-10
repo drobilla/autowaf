@@ -137,12 +137,17 @@ def check_pkg(conf, name, **args):
         check = True;
     if check:
         found = None
+        pkg_var_name = 'PKG_' + name.replace('-', '_')
         if conf.env.PARDEBUG:
             pargs = args
             pargs['mandatory'] = False
             found = conf.check_cfg(package=name + 'D', args="--cflags --libs", **pargs)
+            if found:
+                conf.env[pkg_var_name] = name + 'D'
         if not found:
             conf.check_cfg(package=name, args="--cflags --libs", **args)
+            if found:
+                conf.env[pkg_var_name] = name
         if 'atleast_version' in args:
             conf.env['VERSION_' + name] = args['atleast_version']
     if mandatory:
@@ -333,14 +338,16 @@ def version_lib(self):
 
 def set_lib_env(conf, name, version):
     'Set up environment for local library as if found via pkg-config.'
-    NAME      = name.upper()
-    major_ver = version.split('.')[0]
+    NAME         = name.upper()
+    major_ver    = version.split('.')[0]
+    pkg_var_name = 'PKG_' + name.replace('-', '_')
+    lib_name     = '%s-%s' % (name, major_ver)
+    if conf.env.PARDEBUG:
+        lib_name += 'D'
+    conf.env[pkg_var_name]       = lib_name
     conf.env['INCLUDES_' + NAME] = ['${INCLUDEDIR}/%s-%s' % (name, major_ver)]
     conf.env['LIBPATH_' + NAME]  = [conf.env.LIBDIR]
-    if conf.env.PARDEBUG:
-        conf.env['LIB_' + NAME] = ['%s-%sD' % (name, major_ver)]
-    else:
-        conf.env['LIB_' + NAME] = ['%s-%s' % (name, major_ver)]
+    conf.env['LIB_' + NAME]      = [lib_name]
 
 def display_header(title):
     Logs.pprint('BOLD', title)
