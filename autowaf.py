@@ -231,8 +231,9 @@ def configure(conf):
 
     if Options.options.debug:
         if conf.env['MSVC_COMPILER']:
-            conf.env['CFLAGS']   = ['/Od', '/Zi']
-            conf.env['CXXFLAGS'] = ['/Od', '/Zi']
+            conf.env['CFLAGS']    = ['/Od', '/Zi', '/D_DEBUG']
+            conf.env['CXXFLAGS']  = ['/Od', '/Zi', '/D_DEBUG']
+            conf.env['LINKFLAGS'] = ['/DEBUG']
         else:
             conf.env['CFLAGS']   = ['-O0', '-g']
             conf.env['CXXFLAGS'] = ['-O0',  '-g']
