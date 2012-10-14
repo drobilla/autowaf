@@ -231,13 +231,16 @@ def configure(conf):
 
     if Options.options.debug:
         if conf.env['MSVC_COMPILER']:
-            conf.env['CFLAGS']    = ['/Od', '/Zi', '/D_DEBUG']
-            conf.env['CXXFLAGS']  = ['/Od', '/Zi', '/D_DEBUG']
+            conf.env['CFLAGS']    = ['/Od', '/Zi', '/MTd']
+            conf.env['CXXFLAGS']  = ['/Od', '/Zi', '/MTd']
             conf.env['LINKFLAGS'] = ['/DEBUG']
         else:
             conf.env['CFLAGS']   = ['-O0', '-g']
             conf.env['CXXFLAGS'] = ['-O0',  '-g']
     else:
+        if conf.env['MSVC_COMPILER']:
+            conf.env['CFLAGS']    = ['/MD']
+            conf.env['CXXFLAGS']  = ['/MD']
         append_cxx_flags(['-DNDEBUG'])
 
     if Options.options.ultra_strict:
@@ -290,9 +293,9 @@ int main() { return 0; }''',
 def set_c99_mode(conf):
     if conf.env.MSVC_COMPILER:
         # MSVC has no hope or desire to compile C99, just compile as C++
-        conf.env.append_unique('CFLAGS', ['-TP', '-MD'])
+        conf.env.append_unique('CFLAGS', ['-TP'])
     else:
-        conf.env.append_unique('CFLAGS', '-std=c99')
+        conf.env.append_unique('CFLAGS', ['-std=c99'])
 
 def set_local_lib(conf, name, has_objects):
     var_name = 'HAVE_' + nameify(name.upper())
@@ -721,7 +724,7 @@ def run_ldconfig(ctx):
         except:
             pass
 
-def write_news(name, in_files, out_file, top_entries=None):
+def write_news(name, in_files, out_file, top_entries=None, extra_entries=None):
     import rdflib
     import textwrap
     from time import strftime, strptime
@@ -765,6 +768,10 @@ def write_news(name, in_files, out_file, top_entries=None):
                         top_entries[str(dist)] = []
                     top_entries[str(dist)] += [
                         '%s: %s' % (name, '\n    '.join(item))]
+
+            if extra_entries:
+                for i in extra_entries[str(dist)]:
+                    entry += '\n  * ' + i
 
             entry += '\n\n --'
 
