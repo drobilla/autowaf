@@ -454,6 +454,7 @@ def make_simple_dox(name):
             return
         for i in [
             ['%s_API ' % NAME, ''],
+            ['%s_DEPRECATED ' % NAME, ''],
             ['group__%s.html' % name, ''],
             ['&#160;', ''],
             ['<script.*><\/script>', ''],
