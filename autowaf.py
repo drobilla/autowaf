@@ -514,8 +514,10 @@ def build_dox(bld, name, version, srcdir, blddir, outdir=''):
 
     docs.post()
 
-    bld.install_files(os.path.join('${DOCDIR}', name.lower(), outdir, 'html'),
-                      bld.path.get_bld().ant_glob('doc/html/*'))
+    major = int(version[0:version.find('.')])
+    bld.install_files(
+        os.path.join('${DOCDIR}', '%s-%d' % (name.lower(), major), outdir, 'html'),
+        bld.path.get_bld().ant_glob('doc/html/*'))
     for i in range(1, 8):
         bld.install_files('${MANDIR}/man%d' % i,
                           bld.path.get_bld().ant_glob('doc/man/man%d/*' % i,
