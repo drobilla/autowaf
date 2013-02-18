@@ -482,7 +482,7 @@ def make_simple_dox(name):
         Logs.error("Failed to fix up %s documentation: %s" % (name, e))
 
 # Doxygen API documentation
-def build_dox(bld, name, version, srcdir, blddir, outdir=''):
+def build_dox(bld, name, version, srcdir, blddir, outdir='', versioned=True):
     if not bld.env['DOCS']:
         return
 
@@ -514,9 +514,11 @@ def build_dox(bld, name, version, srcdir, blddir, outdir=''):
 
     docs.post()
 
-    major = int(version[0:version.find('.')])
+    outname = name.lower()
+    if versioned:
+        outname += '-%d' % int(version[0:version.find('.')])
     bld.install_files(
-        os.path.join('${DOCDIR}', '%s-%d' % (name.lower(), major), outdir, 'html'),
+        os.path.join('${DOCDIR}', outname, outdir, 'html'),
         bld.path.get_bld().ant_glob('doc/html/*'))
     for i in range(1, 8):
         bld.install_files('${MANDIR}/man%d' % i,
