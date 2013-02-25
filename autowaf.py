@@ -687,7 +687,24 @@ def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
     Logs.pprint('BOLD', 'Coverage:', sep='')
     print('<file://%s>\n\n' % os.path.abspath('coverage/index.html'))
 
-def run_tests(ctx, appname, tests, desired_status=0, dirs=['src'], name='*'):
+def run_test(ctx, appname, test, desired_status=0, dirs=['src'], name='', header=False):
+    s = test
+    if type(test) == type([]):
+        s = ' '.join(i)
+    if header:
+        Logs.pprint('BOLD', '** Test', sep='')
+        Logs.pprint('NORMAL', '%s' % s)
+    cmd = test
+    if Options.options.grind:
+        cmd = 'valgrind ' + test
+    if subprocess.call(cmd, shell=True) == desired_status:
+        Logs.pprint('GREEN', '** Pass %s' % name)
+        return True
+    else:
+        Logs.pprint('RED', '** FAIL %s' % name)
+        return False
+
+def run_tests(ctx, appname, tests, desired_status=0, dirs=['src'], name='*', headers=False):
     failures = 0
     diropts  = ''
     for i in dirs:
@@ -695,20 +712,8 @@ def run_tests(ctx, appname, tests, desired_status=0, dirs=['src'], name='*'):
 
     # Run all tests
     for i in tests:
-        s = i
-        if type(i) == type([]):
-            s = ' '.join(i)
-        print('')
-        Logs.pprint('BOLD', '** Test', sep='')
-        Logs.pprint('NORMAL', '%s' % s)
-        cmd = i
-        if Options.options.grind:
-            cmd = 'valgrind ' + i
-        if subprocess.call(cmd, shell=True) == desired_status:
-            Logs.pprint('GREEN', '** Pass')
-        else:
+        if not run_test(ctx, appname, i, desired_status, dirs, i, headers):
             failures += 1
-            Logs.pprint('RED', '** FAIL')
 
     print('')
     if failures == 0:
