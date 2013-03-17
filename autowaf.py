@@ -346,7 +346,7 @@ def set_lib_env(conf, name, version):
     'Set up environment for local library as if found via pkg-config.'
     NAME         = name.upper()
     major_ver    = version.split('.')[0]
-    pkg_var_name = 'PKG_' + name.replace('-', '_')
+    pkg_var_name = 'PKG_' + name.replace('-', '_') + '_' + major_ver
     lib_name     = '%s-%s' % (name, major_ver)
     if conf.env.PARDEBUG:
         lib_name += 'D'
