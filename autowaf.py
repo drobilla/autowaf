@@ -247,7 +247,9 @@ def configure(conf):
         Options.options.strict = True
         conf.env.append_value('CFLAGS', ['-Wredundant-decls',
                                          '-Wstrict-prototypes',
-                                         '-Wmissing-prototypes'])
+                                         '-Wmissing-prototypes',
+                                         '-Wcast-qual'])
+        conf.env.append_value('CXXFLAGS', ['-Wcast-qual'])
 
     if Options.options.strict:
         conf.env.append_value('CFLAGS', ['-pedantic', '-Wshadow'])
