@@ -796,7 +796,7 @@ def write_news(name, in_files, out_file, top_entries=None, extra_entries=None):
             entry += '  %s\n\n' % (
                 strftime('%a, %d %b %Y %H:%M:%S +0000', strptime(date, '%Y-%m-%d')))
 
-            entries[revision] = entry
+            entries[(date, revision)] = entry
         else:
             Logs.warn('Ignored incomplete %s release description' % name)
 
