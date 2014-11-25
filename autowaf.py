@@ -84,8 +84,6 @@ def set_options(opt, debug_by_default=False):
     # LV2 options
     opt.add_option('--lv2-user', action='store_true', default=False, dest='lv2_user',
                    help="Install LV2 bundles to user location")
-    opt.add_option('--lv2-system', action='store_true', default=False, dest='lv2_system',
-                   help="Install LV2 bundles to system location")
     dirs_options.add_option('--lv2dir', type='string',
                             help="LV2 bundles [Default: LIBDIR/lv2]")
     g_step = 1
@@ -202,21 +200,19 @@ def configure(conf):
     if Options.options.lv2dir:
         conf.env['LV2DIR'] = Options.options.lv2dir
     elif Options.options.lv2_user:
-        if sys.platform == "darwin":
+        if conf.env.DEST_OS == "darwin":
             conf.env['LV2DIR'] = os.path.join(os.getenv('HOME'), 'Library/Audio/Plug-Ins/LV2')
-        elif sys.platform == "win32":
+        elif conf.env.DEST_OS == "win32":
             conf.env['LV2DIR'] = os.path.join(os.getenv('APPDATA'), 'LV2')
         else:
             conf.env['LV2DIR'] = os.path.join(os.getenv('HOME'), '.lv2')
-    elif Options.options.lv2_system:
-        if sys.platform == "darwin":
+    else:
+        if conf.env.DEST_OS == "darwin":
             conf.env['LV2DIR'] = '/Library/Audio/Plug-Ins/LV2'
-        elif sys.platform == "win32":
+        elif conf.env.DEST_OS == "win32":
             conf.env['LV2DIR'] = os.path.join(os.getenv('COMMONPROGRAMFILES'), 'LV2')
         else:
             conf.env['LV2DIR'] = os.path.join(conf.env['LIBDIR'], 'lv2')
-    else:
-        conf.env['LV2DIR'] = os.path.join(conf.env['LIBDIR'], 'lv2')
 
     conf.env['LV2DIR'] = normpath(conf.env['LV2DIR'])
 
@@ -253,6 +249,7 @@ def configure(conf):
 
     if Options.options.strict:
         conf.env.append_value('CFLAGS', ['-pedantic', '-Wshadow'])
+        conf.env.append_value('LINKFLAGS', ['-Wl,--no-undefined'])
         conf.env.append_value('CXXFLAGS', ['-ansi',
                                            '-Wnon-virtual-dtor',
                                            '-Woverloaded-virtual'])
@@ -337,7 +334,7 @@ def use_lib(bld, obj, libs):
 @feature('c', 'cxx')
 @before('apply_link')
 def version_lib(self):
-    if sys.platform == 'win32':
+    if self.env.DEST_OS == 'win32':
         self.vnum = None  # Prevent waf from automatically appending -0
     if self.env['PARDEBUG']:
         applicable = ['cshlib', 'cxxshlib', 'cstlib', 'cxxstlib']
