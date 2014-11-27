@@ -216,15 +216,6 @@ def configure(conf):
 
     conf.env['LV2DIR'] = normpath(conf.env['LV2DIR'])
 
-    if Options.options.docs:
-        doxygen = conf.find_program('doxygen')
-        if not doxygen:
-            conf.fatal("Doxygen is required to build with --docs")
-
-        dot = conf.find_program('dot')
-        if not dot:
-            conf.fatal("Graphviz (dot) is required to build with --docs")
-
     if Options.options.debug:
         if conf.env['MSVC_COMPILER']:
             conf.env['CFLAGS']    = ['/Od', '/Zi', '/MTd']
