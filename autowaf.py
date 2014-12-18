@@ -240,7 +240,8 @@ def configure(conf):
 
     if Options.options.strict:
         conf.env.append_value('CFLAGS', ['-pedantic', '-Wshadow'])
-        conf.env.append_value('LINKFLAGS', ['-Wl,--no-undefined'])
+        if conf.env.DEST_OS != "darwin":
+            conf.env.append_value('LINKFLAGS', ['-Wl,--no-undefined'])
         conf.env.append_value('CXXFLAGS', ['-ansi',
                                            '-Wnon-virtual-dtor',
                                            '-Woverloaded-virtual'])
