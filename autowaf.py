@@ -477,12 +477,11 @@ def build_dox(bld, name, version, srcdir, blddir, outdir='', versioned=True):
     if not bld.env['DOCS']:
         return
 
+    # Doxygen paths in waf 1.8 are relative to the doxygen file, not build directory
     if is_child():
         src_dir = os.path.join(srcdir, name.lower())
-        doc_dir = os.path.join(blddir, name.lower(), 'doc')
     else:
         src_dir = srcdir
-        doc_dir = os.path.join(blddir, 'doc')
 
     subst_tg = bld(features     = 'subst',
                    source       = 'doc/reference.doxygen.in',
@@ -493,8 +492,8 @@ def build_dox(bld, name, version, srcdir, blddir, outdir='', versioned=True):
     subst_dict = {
         name + '_VERSION' : version,
         name + '_SRCDIR'  : os.path.abspath(src_dir),
-        name + '_DOC_DIR' : os.path.abspath(doc_dir)
-        }
+        name + '_DOC_DIR' : ''
+    }
 
     subst_tg.__dict__.update(subst_dict)
 
