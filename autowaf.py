@@ -81,11 +81,6 @@ def set_options(opt, debug_by_default=False):
     opt.add_option('--docs', action='store_true', default=False, dest='docs',
                    help="Build documentation - requires doxygen")
 
-    # LV2 options
-    opt.add_option('--lv2-user', action='store_true', default=False, dest='lv2_user',
-                   help="Install LV2 bundles to user location")
-    dirs_options.add_option('--lv2dir', type='string',
-                            help="LV2 bundles [Default: LIBDIR/lv2]")
     g_step = 1
 
 def check_header(conf, lang, name, define='', mandatory=True):
@@ -155,7 +150,6 @@ def check_pkg(conf, name, **args):
     else:
         conf.env[var_name] = CheckType.OPTIONAL
 
-
 def normpath(path):
     if sys.platform == 'win32':
         return os.path.normpath(path).replace('\\', '/')
@@ -196,25 +190,6 @@ def configure(conf):
     config_dir('LIBDIR',     opts.libdir,     os.path.join(prefix, 'lib'))
     config_dir('MANDIR',     opts.mandir,     os.path.join(conf.env['DATADIR'], 'man'))
     config_dir('DOCDIR',     opts.docdir,     os.path.join(conf.env['DATADIR'], 'doc'))
-
-    if Options.options.lv2dir:
-        conf.env['LV2DIR'] = Options.options.lv2dir
-    elif Options.options.lv2_user:
-        if conf.env.DEST_OS == "darwin":
-            conf.env['LV2DIR'] = os.path.join(os.getenv('HOME'), 'Library/Audio/Plug-Ins/LV2')
-        elif conf.env.DEST_OS == "win32":
-            conf.env['LV2DIR'] = os.path.join(os.getenv('APPDATA'), 'LV2')
-        else:
-            conf.env['LV2DIR'] = os.path.join(os.getenv('HOME'), '.lv2')
-    else:
-        if conf.env.DEST_OS == "darwin":
-            conf.env['LV2DIR'] = '/Library/Audio/Plug-Ins/LV2'
-        elif conf.env.DEST_OS == "win32":
-            conf.env['LV2DIR'] = os.path.join(os.getenv('COMMONPROGRAMFILES'), 'LV2')
-        else:
-            conf.env['LV2DIR'] = os.path.join(conf.env['LIBDIR'], 'lv2')
-
-    conf.env['LV2DIR'] = normpath(conf.env['LV2DIR'])
 
     if Options.options.debug:
         if conf.env['MSVC_COMPILER']:
