@@ -623,18 +623,18 @@ def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
             # Generate coverage data
             subprocess.call(('lcov -c %s -b %s' % (diropts, base)).split(),
                             stdout=coverage_lcov, stderr=coverage_log)
-    
+
             # Strip unwanted stuff
             subprocess.call(
                 ['lcov', '--remove', 'coverage.lcov'] + remove,
                 stdout=coverage_stripped_lcov, stderr=coverage_log)
-    
+
             # Generate HTML coverage output
             if not os.path.isdir('coverage'):
                 os.makedirs('coverage')
             subprocess.call('genhtml -o coverage coverage-stripped.lcov'.split(),
                             stdout=coverage_log, stderr=coverage_log)
-    
+
         except:
             Logs.warn('Failed to run lcov, no coverage report will be generated')
     finally:
@@ -755,7 +755,7 @@ def write_news(name, in_files, out_file, top_entries=None, extra_entries=None):
             if blamee_name and blamee_mbox:
                 entry += ' %s <%s>' % (blamee_name,
                                        blamee_mbox.replace('mailto:', ''))
-                
+
             entry += '  %s\n\n' % (
                 strftime('%a, %d %b %Y %H:%M:%S +0000', strptime(date, '%Y-%m-%d')))
 
