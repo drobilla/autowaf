@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # Autowaf, useful waf utilities with support for recursive projects
-# Copyright 2008-2011 David Robillard
+# Copyright 2008-2016 David Robillard
 #
 # Licensed under the GNU GPL v2 or later, see COPYING file for details.
 
@@ -592,6 +592,12 @@ def cd_to_orig_dir(ctx, child):
         os.chdir('..')
 
 def pre_test(ctx, appname, dirs=['src']):
+    if not hasattr(ctx, 'autowaf_tests_total'):
+        ctx.autowaf_tests_total        = 0
+        ctx.autowaf_tests_failed       = 0
+        ctx.autowaf_local_tests_total  = 0
+        ctx.autowaf_local_tests_failed = 0
+
     diropts  = ''
     for i in dirs:
         diropts += ' -d ' + i
@@ -642,49 +648,91 @@ def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
         coverage_lcov.close()
         coverage_log.close()
 
-        print('')
+        if ctx.autowaf_tests_failed > 0:
+            Logs.pprint('RED', '\nSummary:  %d / %d %s tests failed' % (
+                ctx.autowaf_local_tests_failed, ctx.autowaf_lcaol_tests_total, appname))
+        else:
+            Logs.pprint('GREEN', '\nSummary:  All %d %s tests passed' % (
+                ctx.autowaf_local_tests_total, appname))
+
+        Logs.pprint('GREEN', 'Coverage: <file://%s>\n'
+                    % os.path.abspath('coverage/index.html'))
+
         Logs.pprint('GREEN', "Waf: Leaving directory `%s'" % os.path.abspath(os.getcwd()))
         top_level = (len(ctx.stack_path) > 1)
         if top_level:
             cd_to_orig_dir(ctx, top_level)
 
-    print('')
-    Logs.pprint('BOLD', 'Coverage:', sep='')
-    print('<file://%s>\n\n' % os.path.abspath('coverage/index.html'))
-
 def run_test(ctx, appname, test, desired_status=0, dirs=['src'], name='', header=False):
-    s = test
-    if type(test) == type([]):
-        s = ' '.join(i)
-    if header:
-        Logs.pprint('BOLD', '** Test', sep='')
-        Logs.pprint('NORMAL', '%s' % s)
-    cmd = test
-    if Options.options.grind:
-        cmd = 'valgrind ' + test
-    if subprocess.call(cmd, shell=True) == desired_status:
+    """Run an individual test.
+
+    `test` is either a shell command string, or a list of [name, return status] for
+    displaying tests implemented in the calling Python code."""
+
+    ctx.autowaf_tests_total += 1
+    ctx.autowaf_local_tests_total += 1
+
+    if type(test) == list:
+        name       = test[0]
+        returncode = test[1]
+    else:
+        s = test
+        if type(test) == type([]):
+            s = ' '.join(i)
+        if header:
+            Logs.pprint('Green', '\n** Test %s' % s)
+        cmd = test
+        if Options.options.grind:
+            cmd = 'valgrind ' + test
+        if name == '':
+            name = test
+
+        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out = proc.communicate()
+        returncode = proc.returncode
+
+    if returncode == desired_status:
         Logs.pprint('GREEN', '** Pass %s' % name)
         return True
     else:
         Logs.pprint('RED', '** FAIL %s' % name)
+        if type(test) != list:
+            Logs.pprint('NORMAL', out[1])
+        ctx.autowaf_local_tests_failed += 1
+        ctx.autowaf_tests_failed += 1
         return False
 
+def tests_name(ctx, appname, name='*'):
+    if name == '*':
+        return appname
+    else:
+        return '%s.%s' % (appname, name)
+
+def begin_tests(ctx, appname, name='*'):
+    ctx.autowaf_local_tests_failed = 0
+    ctx.autowaf_local_tests_total  = 0
+    Logs.pprint('GREEN', '\n** Begin %s tests' % tests_name(ctx, appname, name))
+
+def end_tests(ctx, appname, name='*'):
+    failures = ctx.autowaf_local_tests_failed
+    if failures == 0:
+        Logs.pprint('GREEN', '** Passed all %d %s tests' % (
+            ctx.autowaf_local_tests_total, tests_name(ctx, appname, name)))
+    else:
+        Logs.pprint('RED', '** Failed %d / %d %s tests' % (
+            failures, ctx.autowaf_local_tests_total, tests_name(ctx, appname, name)))
+
 def run_tests(ctx, appname, tests, desired_status=0, dirs=['src'], name='*', headers=False):
-    failures = 0
+    begin_tests(ctx, appname, name)
+
     diropts  = ''
     for i in dirs:
         diropts += ' -d ' + i
 
-    # Run all tests
     for i in tests:
-        if not run_test(ctx, appname, i, desired_status, dirs, i, headers):
-            failures += 1
+        run_test(ctx, appname, i, desired_status, dirs, i, headers)
 
-    print('')
-    if failures == 0:
-        Logs.pprint('GREEN', '** Pass: All %s.%s tests passed' % (appname, name))
-    else:
-        Logs.pprint('RED', '** FAIL: %d %s.%s tests failed' % (failures, appname, name))
+    end_tests(ctx, appname, name)
 
 def run_ldconfig(ctx):
     if (ctx.cmd == 'install'
