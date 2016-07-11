@@ -602,6 +602,9 @@ def pre_test(ctx, appname, dirs=['src']):
         ctx.autowaf_tests_failed       = 0
         ctx.autowaf_local_tests_total  = 0
         ctx.autowaf_local_tests_failed = 0
+        ctx.autowaf_tests              = {}
+
+    ctx.autowaf_tests[appname] = { 'total': 0, 'failed': 0 }
 
     diropts  = ''
     for i in dirs:
@@ -653,12 +656,12 @@ def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
         coverage_lcov.close()
         coverage_log.close()
 
-        if ctx.autowaf_tests_failed > 0:
+        if ctx.autowaf_tests[appname]['failed'] > 0:
             Logs.pprint('RED', '\nSummary:  %d / %d %s tests failed' % (
-                ctx.autowaf_local_tests_failed, ctx.autowaf_local_tests_total, appname))
+                ctx.autowaf_tests[appname]['failed'], ctx.autowaf_tests[appname]['total'], appname))
         else:
             Logs.pprint('GREEN', '\nSummary:  All %d %s tests passed' % (
-                ctx.autowaf_local_tests_total, appname))
+                ctx.autowaf_tests[appname]['total'], appname))
 
         Logs.pprint('GREEN', 'Coverage: <file://%s>\n'
                     % os.path.abspath('coverage/index.html'))
@@ -676,6 +679,7 @@ def run_test(ctx, appname, test, desired_status=0, dirs=['src'], name='', header
 
     ctx.autowaf_tests_total += 1
     ctx.autowaf_local_tests_total += 1
+    ctx.autowaf_tests[appname]['total'] += 1
 
     if type(test) == list:
         name       = test[0]
@@ -707,8 +711,8 @@ def run_test(ctx, appname, test, desired_status=0, dirs=['src'], name='', header
         Logs.pprint('RED', '** FAIL %s' % name)
         if type(test) != list:
             Logs.pprint('NORMAL', out[1])
-        ctx.autowaf_local_tests_failed += 1
         ctx.autowaf_tests_failed += 1
+        ctx.autowaf_tests[appname]['failed'] += 1
         return False
 
 def tests_name(ctx, appname, name='*'):
