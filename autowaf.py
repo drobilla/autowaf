@@ -72,14 +72,19 @@ def set_options(opt, debug_by_default=False):
         opt.add_option('--pardebug', action='store_true', default=False, dest='pardebug',
                        help="Build parallel-installable debuggable libraries with D suffix")
 
-    opt.add_option('--grind', action='store_true', default=False, dest='grind',
-                   help="Run tests in valgrind")
     opt.add_option('--strict', action='store_true', default=False, dest='strict',
                    help="Use strict compiler flags and show all warnings")
     opt.add_option('--ultra-strict', action='store_true', default=False, dest='ultra_strict',
                    help="Use even stricter compiler flags (likely to trigger many warnings in library headers)")
     opt.add_option('--docs', action='store_true', default=False, dest='docs',
                    help="Build documentation - requires doxygen")
+
+    # Test options
+    test_opts = opt.add_option_group('Test options', '')
+    test_opts.add_option('--test-wrapper', type='string', dest='test_wrapper',
+                         help="Command prefix for tests (e.g. valgrind)")
+    test_opts.add_option('--verbose-tests', action='store_true', default=False, dest='verbose_tests',
+                        help="Always show test output")
 
     g_step = 1
 
@@ -682,12 +687,16 @@ def run_test(ctx, appname, test, desired_status=0, dirs=['src'], name='', header
         if header:
             Logs.pprint('Green', '\n** Test %s' % s)
         cmd = test
-        if Options.options.grind:
-            cmd = 'valgrind ' + test
+        if Options.options.test_wrapper:
+            cmd = Options.options.test_wrapper + ' ' + test
         if name == '':
             name = test
 
-        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if Options.options.verbose_tests:
+            proc = subprocess.Popen(cmd, shell=True)
+        else:
+            proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
         out = proc.communicate()
         returncode = proc.returncode
 
