@@ -650,7 +650,7 @@ def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
 
         if ctx.autowaf_tests_failed > 0:
             Logs.pprint('RED', '\nSummary:  %d / %d %s tests failed' % (
-                ctx.autowaf_local_tests_failed, ctx.autowaf_lcaol_tests_total, appname))
+                ctx.autowaf_local_tests_failed, ctx.autowaf_local_tests_total, appname))
         else:
             Logs.pprint('GREEN', '\nSummary:  All %d %s tests passed' % (
                 ctx.autowaf_local_tests_total, appname))
