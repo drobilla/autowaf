@@ -11,7 +11,7 @@ import os
 import subprocess
 import sys
 
-from waflib import Configure, Context, Logs, Node, Options, Task, Utils
+from waflib import Build, Configure, Context, Logs, Node, Options, Task, Utils
 from waflib.TaskGen import feature, before, after
 
 global g_is_child
@@ -25,12 +25,17 @@ g_step = 0
 #import preproc
 #preproc.go_absolute = True
 
+class TestContext(Build.BuildContext):
+    "Context for test command that inherits build context to make configuration available"
+    cmd = 'test'
+    fun = 'test'
+
 @feature('c', 'cxx')
 @after('apply_incpaths')
 def include_config_h(self):
     self.env.append_value('INCPATHS', self.bld.bldnode.abspath())
 
-def set_options(opt, debug_by_default=False):
+def set_options(opt, debug_by_default=False, test=False):
     "Add standard autowaf options if they havn't been added yet"
     global g_step
     if g_step > 0:
@@ -80,11 +85,16 @@ def set_options(opt, debug_by_default=False):
                    help="Build documentation - requires doxygen")
 
     # Test options
-    test_opts = opt.add_option_group('Test options', '')
-    test_opts.add_option('--test-wrapper', type='string', dest='test_wrapper',
-                         help="Command prefix for tests (e.g. valgrind)")
-    test_opts.add_option('--verbose-tests', action='store_true', default=False, dest='verbose_tests',
-                        help="Always show test output")
+    if test:
+        test_opts = opt.add_option_group('Test options', '')
+        test_opts.add_option('--test', action='store_true', dest='build_tests',
+                             help='Build unit tests')
+        test_opts.add_option('--no-coverage', action='store_true', dest='no_coverage',
+                             help='Do not generate lcov code coverage report')
+        test_opts.add_option('--test-wrapper', type='string', dest='test_wrapper',
+                             help='Command prefix for tests (e.g. valgrind)')
+        test_opts.add_option('--verbose-tests', action='store_true', default=False, dest='verbose_tests',
+                             help='Always show test output')
 
     g_step = 1
 
@@ -240,16 +250,31 @@ def configure(conf):
 #error
 #endif
 int main() { return 0; }''',
-                         features  = 'c',
-                         mandatory = False,
-                         execute   = False,
-                         msg       = 'Checking for clang'):
+                             features    = 'c',
+                             mandatory   = False,
+                             execute     = False,
+                             define_name = 'CLANG',
+                             msg         = 'Checking for clang'):
             append_cxx_flags(['-Wlogical-op',
                               '-Wsuggest-attribute=noreturn',
                               '-Wunsafe-loop-optimizations'])
 
     if not conf.env['MSVC_COMPILER']:
         append_cxx_flags(['-fshow-column'])
+
+    conf.env.NO_COVERAGE = True
+    conf.env.BUILD_TESTS = False
+    try:
+        conf.env.BUILD_TESTS = Options.options.build_tests
+        conf.env.NO_COVERAGE = Options.options.no_coverage
+        if not Options.options.no_coverage:
+            # Set up unit test code coverage
+            if conf.is_defined('CLANG'):
+                conf.find_program('llvm-cov', var='LLVM_COV', mandatory=False)
+            else:
+                conf.check_cc(lib='gcov', define_name='HAVE_GCOV', mandatory=False)
+    except:
+        pass # Test options do not exist
 
     conf.env.prepend_value('CFLAGS', '-I' + os.path.abspath('.'))
     conf.env.prepend_value('CXXFLAGS', '-I' + os.path.abspath('.'))
@@ -606,70 +631,76 @@ def pre_test(ctx, appname, dirs=['src']):
 
     ctx.autowaf_tests[appname] = { 'total': 0, 'failed': 0 }
 
-    diropts  = ''
-    for i in dirs:
-        diropts += ' -d ' + i
     cd_to_build_dir(ctx, appname)
-    clear_log = open('lcov-clear.log', 'w')
-    try:
+    if not ctx.env.NO_COVERAGE:
+        diropts  = ''
+        for i in dirs:
+            diropts += ' -d ' + i
+        clear_log = open('lcov-clear.log', 'w')
         try:
-            # Clear coverage data
-            subprocess.call(('lcov %s -z' % diropts).split(),
-                            stdout=clear_log, stderr=clear_log)
-        except:
-            Logs.warn('Failed to run lcov, no coverage report will be generated')
-    finally:
-        clear_log.close()
+            try:
+                # Clear coverage data
+                subprocess.call(('lcov %s -z' % diropts).split(),
+                                stdout=clear_log, stderr=clear_log)
+            except:
+                Logs.warn('Failed to run lcov, no coverage report will be generated')
+        finally:
+            clear_log.close()
 
 def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
-    diropts  = ''
-    for i in dirs:
-        diropts += ' -d ' + i
-    coverage_log           = open('lcov-coverage.log', 'w')
-    coverage_lcov          = open('coverage.lcov', 'w')
-    coverage_stripped_lcov = open('coverage-stripped.lcov', 'w')
-    try:
+    if not ctx.env.NO_COVERAGE:
+        diropts  = ''
+        for i in dirs:
+            diropts += ' -d ' + i
+        coverage_log           = open('lcov-coverage.log', 'w')
+        coverage_lcov          = open('coverage.lcov', 'w')
+        coverage_stripped_lcov = open('coverage-stripped.lcov', 'w')
         try:
-            base = '.'
-            if g_is_child:
-                base = '..'
+            try:
+                base = '.'
+                if g_is_child:
+                    base = '..'
 
-            # Generate coverage data
-            subprocess.call(('lcov -c %s -b %s' % (diropts, base)).split(),
-                            stdout=coverage_lcov, stderr=coverage_log)
+                # Generate coverage data
+                lcov_cmd = 'lcov -c %s -b %s' % (diropts, base)
+                if ctx.env.LLVM_COV:
+                    lcov_cmd += ' --gcov-tool %s' % ctx.env.LLVM_COV[0]
+                subprocess.call(lcov_cmd.split(),
+                                stdout=coverage_lcov, stderr=coverage_log)
 
-            # Strip unwanted stuff
-            subprocess.call(
-                ['lcov', '--remove', 'coverage.lcov'] + remove,
-                stdout=coverage_stripped_lcov, stderr=coverage_log)
+                # Strip unwanted stuff
+                subprocess.call(
+                    ['lcov', '--remove', 'coverage.lcov'] + remove,
+                    stdout=coverage_stripped_lcov, stderr=coverage_log)
 
-            # Generate HTML coverage output
-            if not os.path.isdir('coverage'):
-                os.makedirs('coverage')
-            subprocess.call('genhtml -o coverage coverage-stripped.lcov'.split(),
-                            stdout=coverage_log, stderr=coverage_log)
+                # Generate HTML coverage output
+                if not os.path.isdir('coverage'):
+                    os.makedirs('coverage')
+                subprocess.call('genhtml -o coverage coverage-stripped.lcov'.split(),
+                                stdout=coverage_log, stderr=coverage_log)
 
-        except:
-            Logs.warn('Failed to run lcov, no coverage report will be generated')
-    finally:
-        coverage_stripped_lcov.close()
-        coverage_lcov.close()
-        coverage_log.close()
+            except:
+                Logs.warn('Failed to run lcov, no coverage report will be generated')
+        finally:
+            coverage_stripped_lcov.close()
+            coverage_lcov.close()
+            coverage_log.close()
 
-        if ctx.autowaf_tests[appname]['failed'] > 0:
-            Logs.pprint('RED', '\nSummary:  %d / %d %s tests failed' % (
-                ctx.autowaf_tests[appname]['failed'], ctx.autowaf_tests[appname]['total'], appname))
-        else:
-            Logs.pprint('GREEN', '\nSummary:  All %d %s tests passed' % (
-                ctx.autowaf_tests[appname]['total'], appname))
+    if ctx.autowaf_tests[appname]['failed'] > 0:
+        Logs.pprint('RED', '\nSummary:  %d / %d %s tests failed' % (
+            ctx.autowaf_tests[appname]['failed'], ctx.autowaf_tests[appname]['total'], appname))
+    else:
+        Logs.pprint('GREEN', '\nSummary:  All %d %s tests passed' % (
+            ctx.autowaf_tests[appname]['total'], appname))
 
+    if not ctx.env.NO_COVERAGE:
         Logs.pprint('GREEN', 'Coverage: <file://%s>\n'
                     % os.path.abspath('coverage/index.html'))
 
-        Logs.pprint('GREEN', "Waf: Leaving directory `%s'" % os.path.abspath(os.getcwd()))
-        top_level = (len(ctx.stack_path) > 1)
-        if top_level:
-            cd_to_orig_dir(ctx, top_level)
+    Logs.pprint('GREEN', "Waf: Leaving directory `%s'" % os.path.abspath(os.getcwd()))
+    top_level = (len(ctx.stack_path) > 1)
+    if top_level:
+        cd_to_orig_dir(ctx, top_level)
 
 def run_test(ctx, appname, test, desired_status=0, dirs=['src'], name='', header=False):
     """Run an individual test.
