@@ -791,10 +791,8 @@ def run_ldconfig(ctx):
         except:
             pass
 
-def write_news(name, in_files, out_file, top_entries=None, extra_entries=None, dev_dist=None):
+def get_rdf_news(name, in_files, top_entries=None, extra_entries=None, dev_dist=None):
     import rdflib
-    import textwrap
-    from time import strftime, strptime
 
     doap = rdflib.Namespace('http://usefulinc.com/ns/doap#')
     dcs  = rdflib.Namespace('http://ontologi.es/doap-changeset#')
@@ -825,44 +823,91 @@ def write_news(name, in_files, out_file, top_entries=None, extra_entries=None, d
         dist      = m.value(release, doap['file-release'], None)
 
         if not dist:
+            Logs.warn('No file release for %s %s' % (proj, revision))
             dist = dev_dist
 
         if revision and date and blamee and changeset:
-            if dist == dev_dist:
-                entry = '%s (%s) unstable;\n' % (name, revision)
-            else:
-                entry = '%s (%s) stable;\n' % (name, revision)
+            entry             = {}
+            entry['name']     = str(name)
+            entry['revision'] = str(revision)
+            entry['date']     = str(date)
+            entry['status']   = 'stable' if dist != dev_dist else 'unstable'
+            entry['dist']     = str(dist)
+            entry['items']    = []
 
             for i in m.triples([changeset, dcs.item, None]):
-                item = textwrap.wrap(m.value(i[2], rdfs.label, None), width=79)
-                entry += '\n  * ' + '\n    '.join(item)
+                item = str(m.value(i[2], rdfs.label, None))
+                entry['items'] += [item]
                 if dist and top_entries is not None:
                     if not str(dist) in top_entries:
-                        top_entries[str(dist)] = []
-                    top_entries[str(dist)] += [
-                        '%s: %s' % (name, '\n    '.join(item))]
+                        top_entries[str(dist)] = {'items': []}
+                    top_entries[str(dist)]['items'] += [
+                        '%s: %s' % (name, item)]
 
             if extra_entries and dist:
                 for i in extra_entries[str(dist)]:
-                    entry += '\n  * ' + i
+                    entry['items'] += extra_entries[str(dist)]['items']
 
-            entry += '\n\n --'
+            entry['blamee_name'] = str(m.value(blamee, foaf.name, None))
+            entry['blamee_mbox'] = str(m.value(blamee, foaf.mbox, None))
 
-            blamee_name = m.value(blamee, foaf.name, None)
-            blamee_mbox = m.value(blamee, foaf.mbox, None)
-            if blamee_name and blamee_mbox:
-                entry += ' %s <%s>' % (blamee_name,
-                                       blamee_mbox.replace('mailto:', ''))
-
-            entry += '  %s\n\n' % (
-                strftime('%a, %d %b %Y %H:%M:%S +0000', strptime(date, '%Y-%m-%d')))
-
-            entries[(date, revision)] = entry
+            entries[(str(date), str(revision))] = entry
         else:
             Logs.warn('Ignored incomplete %s release description' % name)
 
-    if len(entries) > 0:
-        news = open(out_file, 'w')
-        for e in sorted(entries.keys(), reverse=True):
-            news.write(entries[e])
-        news.close()
+    return entries
+
+def write_news(entries, out_file):
+    import textwrap
+    from time import strftime, strptime
+
+    if len(entries) == 0:
+        return
+
+    news = open(out_file, 'w')
+    for e in sorted(entries.keys(), reverse=True):
+        entry = entries[e]
+        news.write('%s (%s) %s;\n' % (entry['name'], entry['revision'], entry['status']))
+        for item in entry['items']:
+            wrapped = textwrap.wrap(item, width=79)
+            news.write('\n  * ' + '\n    '.join(wrapped))
+
+        news.write('\n\n --')
+        news.write(' %s <%s>' % (entry['blamee_name'],
+                                 entry['blamee_mbox'].replace('mailto:', '')))
+
+        news.write('  %s\n\n' % (
+            strftime('%a, %d %b %Y %H:%M:%S +0000', strptime(entry['date'], '%Y-%m-%d'))))
+
+    news.close()
+
+def write_posts(entries, meta, out_dir):
+    "write news posts in Pelican Markdown format"
+    for i in entries:
+        entry    = entries[i]
+        date     = i[0]
+        revision = i[1]
+
+        path = os.path.join(out_dir, '%s-%s-%s.md' % (date, entry['name'], revision))
+        post = open(path, 'w')
+        post.write('Title: %s %s\n' % (entry['name'], revision))
+        post.write('Date: %s\n' % (date))
+        post.write('Slug: %s-%s\n' % (entry['name'], revision.replace('.', '-')))
+        for k in meta:
+            post.write('%s: %s\n' % (k, meta[k]))
+        post.write('\n')
+
+        url = entry['dist']
+        if entry['status'] == 'stable':
+            post.write('[%s %s](%s) has been released.\n\n' % (
+                (entry['name'], revision, url)))
+        else:
+            post.write('%s %s is the current development version.\n\n' % (
+                entry['name'], revision))
+
+        post.write('Changes:\n\n')
+        for i in entry['items']:
+            post.write(' * %s\n' % i)
+
+        post.close()
+
