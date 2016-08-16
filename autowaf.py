@@ -11,7 +11,7 @@ import os
 import subprocess
 import sys
 
-from waflib import Build, Configure, Context, Logs, Node, Options, Task, Utils
+from waflib import Build, Logs, Options
 from waflib.TaskGen import feature, before, after
 
 global g_is_child
@@ -130,8 +130,8 @@ def check_pkg(conf, name, **args):
     if args['uselib_store'].lower() in conf.env['AUTOWAF_LOCAL_LIBS']:
         return
     class CheckType:
-        OPTIONAL=1
-        MANDATORY=2
+        OPTIONAL = 1
+        MANDATORY = 2
     var_name = 'CHECKED_' + nameify(args['uselib_store'])
     check = not var_name in conf.env
     mandatory = not 'mandatory' in args or args['mandatory']
@@ -139,10 +139,10 @@ def check_pkg(conf, name, **args):
         # Re-check if version is newer than previous check
         checked_version = conf.env['VERSION_' + name]
         if checked_version and checked_version < args['atleast_version']:
-            check = True;
+            check = True
     if not check and mandatory and conf.env[var_name] == CheckType.OPTIONAL:
         # Re-check if previous check was optional but this one is mandatory
-        check = True;
+        check = True
     if check:
         found = None
         pkg_var_name = 'PKG_' + name.replace('-', '_')
