@@ -793,6 +793,7 @@ def run_ldconfig(ctx):
 
 def get_rdf_news(name, in_files, top_entries=None, extra_entries=None, dev_dist=None):
     import rdflib
+    from time import strptime
 
     doap = rdflib.Namespace('http://usefulinc.com/ns/doap#')
     dcs  = rdflib.Namespace('http://ontologi.es/doap-changeset#')
@@ -830,7 +831,7 @@ def get_rdf_news(name, in_files, top_entries=None, extra_entries=None, dev_dist=
             entry             = {}
             entry['name']     = str(name)
             entry['revision'] = str(revision)
-            entry['date']     = str(date)
+            entry['date']     = strptime(str(date), '%Y-%m-%d')
             entry['status']   = 'stable' if dist != dev_dist else 'unstable'
             entry['dist']     = str(dist)
             entry['items']    = []
@@ -877,37 +878,131 @@ def write_news(entries, out_file):
                                  entry['blamee_mbox'].replace('mailto:', '')))
 
         news.write('  %s\n\n' % (
-            strftime('%a, %d %b %Y %H:%M:%S +0000', strptime(entry['date'], '%Y-%m-%d'))))
+            strftime('%a, %d %b %Y %H:%M:%S +0000', entry['date'])))
 
     news.close()
 
-def write_posts(entries, meta, out_dir):
+def write_posts(entries, meta, out_dir, status='stable'):
     "write news posts in Pelican Markdown format"
+    from time import strftime
+    try:
+        os.mkdir(out_dir)
+    except:
+        pass
+
     for i in entries:
         entry    = entries[i]
         date     = i[0]
         revision = i[1]
+        if entry['status'] != status:
+            continue
 
-        path = os.path.join(out_dir, '%s-%s-%s.md' % (date, entry['name'], revision))
-        post = open(path, 'w')
-        post.write('Title: %s %s\n' % (entry['name'], revision))
-        post.write('Date: %s\n' % (date))
+        date_str     = strftime('%Y-%m-%d', entry['date'])
+        datetime_str = strftime('%Y-%m-%d %H:%M', entry['date'])
+
+        path  = os.path.join(out_dir, '%s-%s-%s.md' % (
+            date_str, entry['name'], revision.replace('.', '-')))
+        post  = open(path, 'w')
+        title = entry['title'] if 'title' in entry else entry['name']
+        post.write('Title: %s %s\n' % (title, revision))
+        post.write('Date: %s\n' % datetime_str)
         post.write('Slug: %s-%s\n' % (entry['name'], revision.replace('.', '-')))
         for k in meta:
             post.write('%s: %s\n' % (k, meta[k]))
         post.write('\n')
 
         url = entry['dist']
-        if entry['status'] == 'stable':
-            post.write('[%s %s](%s) has been released.\n\n' % (
+        if entry['status'] == status:
+            post.write('[%s %s](%s) has been released.' % (
                 (entry['name'], revision, url)))
-        else:
-            post.write('%s %s is the current development version.\n\n' % (
-                entry['name'], revision))
 
-        post.write('Changes:\n\n')
+        if 'description' in entry:
+            post.write('  ' + entry['description'])
+
+        post.write('\n\nChanges:\n\n')
         for i in entry['items']:
             post.write(' * %s\n' % i)
 
         post.close()
 
+def get_blurb(in_file):
+    "Get the first paragram of a Markdown formatted file, skipping the title"
+    f = open(in_file, 'r')
+    f.readline() # Title
+    f.readline() # Title underline
+    f.readline() # Blank
+    out = ''
+    line = ''
+    while len(line) > 0 and line != '\n':
+        line = f.readline()
+        out += line.replace('\n', ' ')
+    return out.strip()
+
+def get_news(in_file, entry_props={}):
+    """Get NEWS entries in the format expected by write_posts().
+
+    Properties that should be set on every entry can be passed in
+    `entry_props`.  If `entry_props` has a 'dist_pattern' value, it is used to
+    set the 'dist' entry of entries by substituting the version number.
+    """
+
+    import re
+    import rfc822
+    from time import strftime
+
+    f       = open(in_file, 'r')
+    entries = {}
+    while True:
+        # Read header line
+        head    = f.readline()
+        matches = re.compile('([^ ]*) \((.*)\) ([a-zA-z]*);').match(head)
+        if matches is None:
+            break
+
+        entry             = {}
+        entry['name']     = matches.group(1)
+        entry['revision'] = matches.group(2)
+        entry['status']   = matches.group(3)
+        entry['items']    = []
+        if 'dist_pattern' in entry_props:
+            entry['dist'] = entry_props['dist_pattern'] % entry['revision']
+
+        # Read blank line after header
+        if f.readline() != '\n':
+            raise SyntaxError('expected blank line after NEWS header')
+
+        def add_item(item):
+            if len(item) > 0:
+                entry['items'] += [item.replace('\n', ' ').strip()]
+
+        # Read entries for this revision
+        item = ''
+        line = ''
+        while line != '\n':
+            line = f.readline()
+            if line.startswith('  * '):
+                add_item(item)
+                item = line[3:].lstrip()
+            else:
+                item += line.lstrip()
+        add_item(item)
+
+        # Read footer line
+        foot    = f.readline()
+        matches = re.compile(' -- (.*) <(.*)>  (.*)').match(foot)
+        entry['date']        = rfc822.parsedate(matches.group(3))
+        entry['blamee_name'] = matches.group(1)
+        entry['blamee_mbox'] = matches.group(2)
+        entry.update(entry_props)
+        entries[(entry['date'], entry['revision'])] = entry
+
+        # Skip trailing blank line before next entry
+        f.readline()
+
+    f.close()
+
+    return entries
+
+def news_to_posts(news_file, entry_props, post_meta, post_dir):
+    entries = get_news(news_file, entry_props)
+    write_posts(entries, post_meta, post_dir)
