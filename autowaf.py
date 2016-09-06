@@ -919,9 +919,12 @@ def write_posts(entries, meta, out_dir, status='stable'):
         if 'description' in entry:
             post.write('  ' + entry['description'])
 
-        post.write('\n\nChanges:\n\n')
-        for i in entry['items']:
-            post.write(' * %s\n' % i)
+        post.write('\n')
+        if (len(entry['items']) > 0 and
+            not (len(entry['items']) == 1 and entry['items'][0] == 'Initial release')):
+            post.write('\nChanges:\n\n')
+            for i in entry['items']:
+                post.write(' * %s\n' % i)
 
         post.close()
 
@@ -932,10 +935,10 @@ def get_blurb(in_file):
     f.readline() # Title underline
     f.readline() # Blank
     out = ''
-    line = ''
+    line = f.readline()
     while len(line) > 0 and line != '\n':
-        line = f.readline()
         out += line.replace('\n', ' ')
+        line = f.readline()
     return out.strip()
 
 def get_news(in_file, entry_props={}):
