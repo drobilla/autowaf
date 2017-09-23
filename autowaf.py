@@ -710,7 +710,7 @@ def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
     if top_level:
         cd_to_orig_dir(ctx, top_level)
 
-def run_test(ctx, appname, test, desired_status=0, dirs=['src'], name='', header=False):
+def run_test(ctx, appname, test, desired_status=0, dirs=['src'], name='', header=False, quiet=False):
     """Run an individual test.
 
     `test` is either a shell command string, or a list of [name, return status] for
@@ -720,14 +720,17 @@ def run_test(ctx, appname, test, desired_status=0, dirs=['src'], name='', header
     ctx.autowaf_local_tests_total += 1
     ctx.autowaf_tests[appname]['total'] += 1
 
+    out = (None,None)
     if type(test) == list:
         name       = test[0]
         returncode = test[1]
+    elif callable(test):
+        returncode = test()
     else:
         s = test
         if type(test) == type([]):
             s = ' '.join(i)
-        if header:
+        if header and not quiet:
             Logs.pprint('Green', '\n** Test %s' % s)
         cmd = test
         if Options.options.test_wrapper:
@@ -735,24 +738,26 @@ def run_test(ctx, appname, test, desired_status=0, dirs=['src'], name='', header
         if name == '':
             name = test
 
-        if Options.options.verbose_tests:
-            proc = subprocess.Popen(cmd, shell=True)
-        else:
-            proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out = proc.communicate()
         returncode = proc.returncode
 
-    if returncode == desired_status:
-        Logs.pprint('GREEN', '** Pass %s' % name)
-        return True
+    success = desired_status is None or returncode == desired_status
+    if success:
+        if not quiet:
+            Logs.pprint('GREEN', '** Pass %s' % name)
     else:
         Logs.pprint('RED', '** FAIL %s' % name)
-        if type(test) != list:
-            Logs.pprint('NORMAL', out[1])
         ctx.autowaf_tests_failed += 1
         ctx.autowaf_tests[appname]['failed'] += 1
-        return False
+        if type(test) != list and not callable(test):
+            Logs.pprint('RED', test)
+
+    if Options.options.verbose_tests and type(test) != list and not callable(test):
+        sys.stdout.write(out[0])
+        sys.stderr.write(out[1])
+
+    return (success, out)
 
 def tests_name(ctx, appname, name='*'):
     if name == '*':
@@ -764,6 +769,12 @@ def begin_tests(ctx, appname, name='*'):
     ctx.autowaf_local_tests_failed = 0
     ctx.autowaf_local_tests_total  = 0
     Logs.pprint('GREEN', '\n** Begin %s tests' % tests_name(ctx, appname, name))
+    class Handle:
+        def __enter__(self):
+            pass
+        def __exit__(self, type, value, traceback):
+            end_tests(ctx, appname, name)
+    return Handle()
 
 def end_tests(ctx, appname, name='*'):
     failures = ctx.autowaf_local_tests_failed
