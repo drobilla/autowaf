@@ -293,6 +293,14 @@ def set_c99_mode(conf):
     else:
         conf.env.append_unique('CFLAGS', ['-std=c99'])
 
+def set_cxx11_mode(conf, mandatory=False):
+    if conf.check_cxx(cxxflags=['-std=c++11'], mandatory=False):
+        conf.env.append_unique('CXXFLAGS', ['-std=c++11'])
+    elif conf.check_cxx(cxxflags=['-std=c++0x'], mandatory=False):
+        conf.env.append_unique('CXXFLAGS', ['-std=c++0x'])
+    elif mandatory:
+        Logs.error('No C++11 compiler flags supported')
+
 def set_local_lib(conf, name, has_objects):
     var_name = 'HAVE_' + nameify(name.upper())
     define(conf, var_name, 1)
