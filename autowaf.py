@@ -1028,3 +1028,37 @@ def get_news(in_file, entry_props={}):
 def news_to_posts(news_file, entry_props, post_meta, post_dir):
     entries = get_news(news_file, entry_props)
     write_posts(entries, post_meta, post_dir)
+
+def run_script(cmds):
+    for cmd in cmds:
+        subprocess.check_call(cmd, shell=True)
+
+def release(name, version, dist_name=None):
+    if dist_name is None:
+        dist_name = name.lower()
+
+    dist = '%s-%s.tar.bz2' % (dist_name or name.lower(), version)
+    try:
+        os.remove(dist)
+        os.remove(dist + '.sig')
+    except:
+        pass
+
+    status = subprocess.check_output('git status --porcelain', shell=True)
+    if status:
+        Logs.error('error: git working copy is dirty\n' + status)
+        raise Exception('git working copy is dirty')
+
+    head = subprocess.check_output('git show -s --oneline', shell=True)
+    head_summary = head[8:].strip().lower()
+    expected_summary = '%s %s' % (name.lower(), version)
+    if head_summary != expected_summary:
+        raise Exception('latest commit "%s" does not match "%s"' % (
+            head_summary, expected_summary))
+
+    run_script(['./waf configure --docs',
+                './waf',
+                './waf distcheck',
+                './waf posts',
+                'gpg -b %s' % dist,
+                'git tag -s v%s -m "%s %s"' % (version, name, version)])
