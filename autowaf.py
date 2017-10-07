@@ -232,8 +232,7 @@ def configure(conf):
         conf.env.append_value('CFLAGS', ['-pedantic', '-Wshadow'])
         if conf.env.DEST_OS != "darwin":
             conf.env.append_value('LINKFLAGS', ['-Wl,--no-undefined'])
-        conf.env.append_value('CXXFLAGS', ['-ansi',
-                                           '-Wnon-virtual-dtor',
+        conf.env.append_value('CXXFLAGS', ['-Wnon-virtual-dtor',
                                            '-Woverloaded-virtual'])
         append_cxx_flags(['-Wall',
                           '-Wcast-align',
