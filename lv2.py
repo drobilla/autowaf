@@ -5,11 +5,11 @@ from waflib import Logs
 from waflib import Options
 
 def options(opt):
-    dirs_options = opt.add_option_group('Installation directories', '')
-    opt.add_option('--lv2-user', action='store_true', default=False, dest='lv2_user',
-                   help='Install LV2 bundles to user location')
-    dirs_options.add_option('--lv2dir', type='string',
-                            help='LV2 bundles [Default: LIBDIR/lv2]')
+    conf_opts = opt.get_option_group('Configuration options')
+    conf_opts.add_option('--lv2-user', action='store_true', default=False, dest='lv2_user',
+                         help='install LV2 bundles to user location')
+    conf_opts.add_option('--lv2dir', type='string',
+                         help='LV2 bundles [Default: LIBDIR/lv2]')
     
 def configure(conf):
     def env_path(parent_dir_var, name):

@@ -41,60 +41,52 @@ def set_options(opt, debug_by_default=False, test=False):
     if g_step > 0:
         return
 
-    # Install directory options
-    dirs_options = opt.add_option_group('Installation directories', '')
-
-    # Move --prefix and --destdir to directory options group
-    for k in ('--prefix', '--destdir'):
-        option = opt.parser.get_option(k)
-        if option:
-            opt.parser.remove_option(k)
-            dirs_options.add_option(option)
+    opts = opt.get_option_group('Configuration options')
 
     # Standard directory options
-    dirs_options.add_option('--bindir', type='string',
-                            help="Executable programs [Default: PREFIX/bin]")
-    dirs_options.add_option('--configdir', type='string',
-                            help="Configuration data [Default: PREFIX/etc]")
-    dirs_options.add_option('--datadir', type='string',
-                            help="Shared data [Default: PREFIX/share]")
-    dirs_options.add_option('--includedir', type='string',
-                            help="Header files [Default: PREFIX/include]")
-    dirs_options.add_option('--libdir', type='string',
-                            help="Libraries [Default: PREFIX/lib]")
-    dirs_options.add_option('--mandir', type='string',
-                            help="Manual pages [Default: DATADIR/man]")
-    dirs_options.add_option('--docdir', type='string',
-                            help="HTML documentation [Default: DATADIR/doc]")
+    opts.add_option('--bindir', type='string',
+                    help="executable programs [default: PREFIX/bin]")
+    opts.add_option('--configdir', type='string',
+                    help="configuration data [default: PREFIX/etc]")
+    opts.add_option('--datadir', type='string',
+                    help="shared data [default: PREFIX/share]")
+    opts.add_option('--includedir', type='string',
+                    help="header files [default: PREFIX/include]")
+    opts.add_option('--libdir', type='string',
+                    help="libraries [default: PREFIX/lib]")
+    opts.add_option('--mandir', type='string',
+                    help="manual pages [default: DATADIR/man]")
+    opts.add_option('--docdir', type='string',
+                    help="HTML documentation [default: DATADIR/doc]")
 
     # Build options
     if debug_by_default:
-        opt.add_option('--optimize', action='store_false', default=True, dest='debug',
-                       help="Build optimized binaries")
+        opts.add_option('--optimize', action='store_false', default=True, dest='debug',
+                        help="build optimized binaries")
     else:
-        opt.add_option('--debug', action='store_true', default=False, dest='debug',
-                       help="Build debuggable binaries")
-        opt.add_option('--pardebug', action='store_true', default=False, dest='pardebug',
-                       help="Build parallel-installable debuggable libraries with D suffix")
+        opts.add_option('--debug', action='store_true', default=False, dest='debug',
+                        help="build debuggable binaries")
+        opts.add_option('--pardebug', action='store_true', default=False, dest='pardebug',
+                        help="build parallel-installable debuggable libraries with D suffix")
 
-    opt.add_option('--strict', action='store_true', default=False, dest='strict',
-                   help="Use strict compiler flags and show all warnings")
-    opt.add_option('--ultra-strict', action='store_true', default=False, dest='ultra_strict',
-                   help="Use even stricter compiler flags (likely to trigger many warnings in library headers)")
-    opt.add_option('--docs', action='store_true', default=False, dest='docs',
-                   help="Build documentation - requires doxygen")
+    opts.add_option('--strict', action='store_true', default=False, dest='strict',
+                    help="use strict compiler flags and show all warnings")
+    opts.add_option('--ultra-strict', action='store_true', default=False, dest='ultra_strict',
+                    help="use extremely strict compiler flags (likely noisy)")
+    opts.add_option('--docs', action='store_true', default=False, dest='docs',
+                    help="build documentation (requires doxygen)")
 
     # Test options
     if test:
         test_opts = opt.add_option_group('Test options', '')
-        test_opts.add_option('--test', action='store_true', dest='build_tests',
-                             help='Build unit tests')
-        test_opts.add_option('--no-coverage', action='store_true', dest='no_coverage',
-                             help='Do not generate lcov code coverage report')
+        opts.add_option('--test', action='store_true', dest='build_tests',
+                        help='build unit tests')
+        opts.add_option('--no-coverage', action='store_true', dest='no_coverage',
+                        help='do not instrument code for test coverage')
         test_opts.add_option('--test-wrapper', type='string', dest='test_wrapper',
-                             help='Command prefix for tests (e.g. valgrind)')
+                             help='command prefix for tests (e.g. valgrind)')
         test_opts.add_option('--verbose-tests', action='store_true', default=False, dest='verbose_tests',
-                             help='Always show test output')
+                             help='always show test output')
 
     g_step = 1
 
