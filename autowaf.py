@@ -1025,7 +1025,14 @@ def get_news(in_file, entry_props={}):
 
     return entries
 
-def news_to_posts(news_file, entry_props, post_meta, post_dir):
+def news_to_posts(news_file, entry_props, post_meta, default_post_dir):
+    post_dir = os.getenv('POST_DIR')
+    if not post_dir:
+        post_dir = default_post_dir
+        sys.stderr.write('POST_DIR not set in environment, writing to %s\n' % post_dir)
+    else:
+        sys.stderr.write('writing posts to %s\n' % post_dir)
+
     entries = get_news(news_file, entry_props)
     write_posts(entries, post_meta, post_dir)
 
