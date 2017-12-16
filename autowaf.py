@@ -212,6 +212,9 @@ def configure(conf):
             conf.env['CXXFLAGS']  = ['/MD']
         append_cxx_flags(['-DNDEBUG'])
 
+    set_modern_c_flags(conf)
+    set_modern_cxx_flags(conf)
+
     if Options.options.ultra_strict:
         Options.options.strict = True
         conf.env.append_value('CFLAGS', ['-Wredundant-decls',
@@ -277,20 +280,25 @@ int main() { return 0; }''',
 
     g_step = 2
 
-def set_c99_mode(conf):
-    if conf.env.MSVC_COMPILER:
-        # MSVC has no hope or desire to compile C99, just compile as C++
-        conf.env.append_unique('CFLAGS', ['-TP'])
-    else:
-        conf.env.append_unique('CFLAGS', ['-std=c99'])
+def set_modern_c_flags(conf):
+    if 'COMPILER_CC' in conf.env:
+        if conf.env.MSVC_COMPILER:
+            # MSVC has no hope or desire to compile C99, just compile as C++
+            conf.env.append_unique('CFLAGS', ['-TP'])
+        else:
+            for flag in ['-std=c11', '-std=c99']:
+                if conf.check(cflags=['-Werror', flag], mandatory=False,
+                              msg="Checking for flag '%s'" % flag):
+                    conf.env.append_unique('CFLAGS', [flag])
+                    break
 
-def set_cxx11_mode(conf, mandatory=False):
-    if conf.check_cxx(cxxflags=['-std=c++11'], mandatory=False):
-        conf.env.append_unique('CXXFLAGS', ['-std=c++11'])
-    elif conf.check_cxx(cxxflags=['-std=c++0x'], mandatory=False):
-        conf.env.append_unique('CXXFLAGS', ['-std=c++0x'])
-    elif mandatory:
-        Logs.error('No C++11 compiler flags supported')
+def set_modern_cxx_flags(conf, mandatory=False):
+    if 'COMPILER_CXX' in conf.env:
+        for flag in ['-std=c++14', '-std=c++1y', '-std=c++11', '-std=c++0x']:
+            if conf.check(cxxflags=['-Werror', flag], mandatory=False,
+                          msg="Checking for flag '%s'" % flag):
+                conf.env.append_unique('CXXFLAGS', [flag])
+                break
 
 def set_local_lib(conf, name, has_objects):
     var_name = 'HAVE_' + nameify(name.upper())
