@@ -264,7 +264,9 @@ int main() { return 0; }''',
         if not Options.options.no_coverage:
             # Set up unit test code coverage
             if conf.is_defined('CLANG'):
-                conf.find_program('llvm-cov', var='LLVM_COV', mandatory=False)
+                for cov in [conf.env.CC[0].replace('clang', 'llvm-cov'), 'llvm-cov']:
+                    if conf.find_program(cov, var='LLVM_COV', mandatory=False):
+                        break
             else:
                 conf.check_cc(lib='gcov', define_name='HAVE_GCOV', mandatory=False)
     except:
