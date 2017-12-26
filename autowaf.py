@@ -21,6 +21,9 @@ g_is_child = False
 global g_step
 g_step = 0
 
+global line_just
+line_just = 40
+
 # Compute dependencies globally
 #import preproc
 #preproc.go_absolute = True
@@ -359,6 +362,11 @@ def set_lib_env(conf, name, version):
     conf.env['INCLUDES_' + NAME] = ['${INCLUDEDIR}/%s-%s' % (name, major_ver)]
     conf.env['LIBPATH_' + NAME]  = [conf.env.LIBDIR]
     conf.env['LIB_' + NAME]      = [lib_name]
+
+def set_line_just(conf, width):
+    global line_just
+    line_just = max(line_just, width)
+    conf.line_just = line_just
 
 def display_header(title):
     Logs.pprint('BOLD', title)
