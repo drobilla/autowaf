@@ -193,7 +193,7 @@ def configure(conf):
     except:
         pass
 
-    conf.env['DOCS'] = Options.options.docs
+    conf.env['DOCS'] = Options.options.docs and conf.env.DOXYGEN
     conf.env['DEBUG'] = Options.options.debug or Options.options.pardebug
     conf.env['PARDEBUG'] = Options.options.pardebug
     conf.env['PREFIX'] = normpath(os.path.abspath(os.path.expanduser(conf.env['PREFIX'])))
@@ -298,8 +298,8 @@ def display_summary(conf):
     Logs.pprint('', '')
     if not g_is_child:
         display_msg(conf, "Install prefix", conf.env['PREFIX'])
-        display_msg(conf, "Debuggable build", str(conf.env['DEBUG']))
-        display_msg(conf, "Build documentation", str(conf.env['DOCS']))
+        display_msg(conf, "Debuggable build", bool(conf.env['DEBUG']))
+        display_msg(conf, "Build documentation", bool(conf.env['DOCS']))
 
 def set_modern_c_flags(conf):
     if 'COMPILER_CC' in conf.env:
