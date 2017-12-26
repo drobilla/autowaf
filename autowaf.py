@@ -93,23 +93,21 @@ def set_options(opt, debug_by_default=False, test=False):
 
     g_step = 1
 
-def check_header(conf, lang, name, define='', mandatory=True):
-    "Check for a header"
-    includes = '' # search default system include paths
-    if sys.platform == "darwin":
-        includes = '/opt/local/include'
-
+def get_check_func(conf, lang):
     if lang == 'c':
-        check_func = conf.check_cc
+        return conf.check_cc
     elif lang == 'cxx':
-        check_func = conf.check_cxx
+        return conf.check_cxx
     else:
         Logs.error("Unknown header language `%s'" % lang)
-        return
 
+def check_header(conf, lang, name, define='', mandatory=True):
+    "Check for a header"
+    check_func = get_check_func(conf, lang)
     if define != '':
-        check_func(header_name=name, includes=includes,
-                   define_name=define, mandatory=mandatory)
+        check_func(header_name=name,
+                   define_name=define,
+                   mandatory=mandatory)
     else:
         check_func(header_name=name, includes=includes, mandatory=mandatory)
 
