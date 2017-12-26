@@ -380,17 +380,20 @@ def set_line_just(conf, width):
     conf.line_just = line_just
 
 def display_header(title):
-    Logs.pprint('BOLD', title)
+    global g_is_child
+    if g_is_child:
+        Logs.pprint('BOLD', title)
 
 def display_msg(conf, msg, status = None, color = None):
     color = 'CYAN'
-    if type(status) == bool and status or status == "True":
-        color = 'GREEN'
+    if type(status) == bool and status:
+        color  = 'GREEN'
+        status = 'yes'
     elif type(status) == bool and not status or status == "False":
-        color = 'YELLOW'
-    Logs.pprint('BOLD', " *", sep='')
-    Logs.pprint('NORMAL', "%s" % msg.ljust(conf.line_just - 3), sep='')
-    Logs.pprint('BOLD', ":", sep='')
+        color  = 'YELLOW'
+        status = 'no'
+    Logs.pprint('NORMAL', '  %s' % msg.ljust(conf.line_just - 2), sep='')
+    Logs.pprint('NORMAL', ":", sep='')
     Logs.pprint(color, status)
 
 def link_flags(env, lib):
