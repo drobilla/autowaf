@@ -184,8 +184,6 @@ def configure(conf):
     def append_cxx_flags(flags):
         conf.env.append_value('CFLAGS', flags)
         conf.env.append_value('CXXFLAGS', flags)
-    print('')
-    display_header('Global Configuration')
 
     if Options.options.docs:
         conf.load('doxygen')
@@ -288,13 +286,15 @@ int main() { return 0; }''',
 
     conf.env.prepend_value('CFLAGS', '-I' + os.path.abspath('.'))
     conf.env.prepend_value('CXXFLAGS', '-I' + os.path.abspath('.'))
-
-    display_msg(conf, "Install prefix", conf.env['PREFIX'])
-    display_msg(conf, "Debuggable build", str(conf.env['DEBUG']))
-    display_msg(conf, "Build documentation", str(conf.env['DOCS']))
-    print('')
-
     g_step = 2
+
+def display_summary(conf):
+    global g_is_child
+    Logs.pprint('', '')
+    if not g_is_child:
+        display_msg(conf, "Install prefix", conf.env['PREFIX'])
+        display_msg(conf, "Debuggable build", str(conf.env['DEBUG']))
+        display_msg(conf, "Build documentation", str(conf.env['DOCS']))
 
 def set_modern_c_flags(conf):
     if 'COMPILER_CC' in conf.env:
