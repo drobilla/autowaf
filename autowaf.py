@@ -188,6 +188,11 @@ def configure(conf):
     if Options.options.docs:
         conf.load('doxygen')
 
+    try:
+        conf.load('clang_compilation_database')
+    except:
+        pass
+
     conf.env['DOCS'] = Options.options.docs
     conf.env['DEBUG'] = Options.options.debug or Options.options.pardebug
     conf.env['PARDEBUG'] = Options.options.pardebug
