@@ -11,7 +11,7 @@ import os
 import subprocess
 import sys
 
-from waflib import Build, Logs, Options
+from waflib import Build, Logs, Options, Utils
 from waflib.TaskGen import feature, before, after
 
 global g_is_child
@@ -110,6 +110,19 @@ def check_header(conf, lang, name, define='', mandatory=True):
                    mandatory=mandatory)
     else:
         check_func(header_name=name, includes=includes, mandatory=mandatory)
+
+def check_function(conf, lang, name, **args):
+    "Check for a function"
+    header_names = Utils.to_list(args['header_name'])
+    includes = ''.join(['#include <%s>\n' % x for x in header_names])
+    fragment = '''
+%s
+int main() { return !(void(*)())(%s); }
+''' % (includes, name)
+
+    check_func  = get_check_func(conf, lang)
+    args['msg'] = 'Checking for %s' % name
+    check_func(fragment=fragment, **args)
 
 def nameify(name):
     return name.replace('/', '_').replace('++', 'PP').replace('-', '_').replace('.', '_')
