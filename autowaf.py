@@ -217,44 +217,50 @@ def configure(conf):
 
     if Options.options.debug:
         if conf.env['MSVC_COMPILER']:
-            conf.env['CFLAGS']    = ['/Od', '/Zi', '/MTd']
-            conf.env['CXXFLAGS']  = ['/Od', '/Zi', '/MTd']
-            conf.env['LINKFLAGS'] = ['/DEBUG']
+            conf.env['CFLAGS']    = ['/Od', '/Zi', '/MTd', '/FS']
+            conf.env['CXXFLAGS']  = ['/Od', '/Zi', '/MTd', '/FS']
         else:
             conf.env['CFLAGS']   = ['-O0', '-g']
             conf.env['CXXFLAGS'] = ['-O0',  '-g']
     else:
         if conf.env['MSVC_COMPILER']:
-            conf.env['CFLAGS']    = ['/MD']
-            conf.env['CXXFLAGS']  = ['/MD']
-        append_cxx_flags(['-DNDEBUG'])
+            conf.env['CFLAGS']    = ['/MD', '/FS', '/DNDEBUG']
+            conf.env['CXXFLAGS']  = ['/MD', '/FS', '/DNDEBUG']
+        else:
+            append_cxx_flags(['-DNDEBUG'])
 
     set_modern_c_flags(conf)
     set_modern_cxx_flags(conf)
 
-    if Options.options.ultra_strict:
-        Options.options.strict = True
-        conf.env.append_value('CFLAGS', ['-Wredundant-decls',
-                                         '-Wstrict-prototypes',
-                                         '-Wmissing-prototypes',
-                                         '-Wcast-qual'])
-        conf.env.append_value('CXXFLAGS', ['-Wcast-qual'])
+    if conf.env.MSVC_COMPILER:
+        Options.options.no_coverage = True
+        if Options.options.strict:
+            conf.env.append_value('CFLAGS', ['/Wall'])
+            conf.env.append_value('CXXFLAGS', ['/Wall'])
+    else:
+        if Options.options.ultra_strict:
+            Options.options.strict = True
+            conf.env.append_value('CFLAGS', ['-Wredundant-decls',
+                                             '-Wstrict-prototypes',
+                                             '-Wmissing-prototypes',
+                                             '-Wcast-qual'])
+            conf.env.append_value('CXXFLAGS', ['-Wcast-qual'])
 
-    if Options.options.strict:
-        conf.env.append_value('CFLAGS', ['-pedantic', '-Wshadow'])
-        if conf.env.DEST_OS != "darwin":
-            conf.env.append_value('LINKFLAGS', ['-Wl,--no-undefined'])
-        conf.env.append_value('CXXFLAGS', ['-Wnon-virtual-dtor',
-                                           '-Woverloaded-virtual'])
-        append_cxx_flags(['-Wall',
-                          '-Wcast-align',
-                          '-Wextra',
-                          '-Wmissing-declarations',
-                          '-Wno-unused-parameter',
-                          '-Wstrict-overflow',
-                          '-Wundef',
-                          '-Wwrite-strings',
-                          '-fstrict-overflow'])
+        if Options.options.strict:
+            conf.env.append_value('CFLAGS', ['-pedantic', '-Wshadow'])
+            if conf.env.DEST_OS != "darwin":
+                conf.env.append_value('LINKFLAGS', ['-Wl,--no-undefined'])
+            conf.env.append_value('CXXFLAGS', ['-Wnon-virtual-dtor',
+                                               '-Woverloaded-virtual'])
+            append_cxx_flags(['-Wall',
+                              '-Wcast-align',
+                              '-Wextra',
+                              '-Wmissing-declarations',
+                              '-Wno-unused-parameter',
+                              '-Wstrict-overflow',
+                              '-Wundef',
+                              '-Wwrite-strings',
+                              '-fstrict-overflow'])
 
         if not conf.check_cc(fragment = '''
 #ifndef __clang__
@@ -315,11 +321,14 @@ def set_modern_c_flags(conf):
 
 def set_modern_cxx_flags(conf, mandatory=False):
     if 'COMPILER_CXX' in conf.env:
-        for flag in ['-std=c++14', '-std=c++1y', '-std=c++11', '-std=c++0x']:
-            if conf.check(cxxflags=['-Werror', flag], mandatory=False,
-                          msg="Checking for flag '%s'" % flag):
-                conf.env.append_unique('CXXFLAGS', [flag])
-                break
+        if conf.env.MSVC_COMPILER:
+            conf.env.append_unique('CXXFLAGS', ['/std:c++latest'])
+        else:
+            for flag in ['-std=c++14', '-std=c++1y', '-std=c++11', '-std=c++0x']:
+                if conf.check(cxxflags=['-Werror', flag], mandatory=False,
+                              msg="Checking for flag '%s'" % flag):
+                    conf.env.append_unique('CXXFLAGS', [flag])
+                    break
 
 def set_local_lib(conf, name, has_objects):
     var_name = 'HAVE_' + nameify(name.upper())
@@ -349,7 +358,10 @@ def use_lib(bld, obj, libs):
             append_property(obj, 'use', ' lib%s ' % l.lower())
             append_property(obj, 'framework', bld.env['FRAMEWORK_' + l])
         if in_headers or in_libs:
-            inc_flag = '-iquote ' + os.path.join(abssrcdir, l.lower())
+            if bld.env.MSVC_COMPILER:
+                inc_flag = '/I' + os.path.join(abssrcdir, l.lower())
+            else:
+                inc_flag = '-iquote ' + os.path.join(abssrcdir, l.lower())
             for f in ['CFLAGS', 'CXXFLAGS']:
                 if not inc_flag in bld.env[f]:
                     bld.env.prepend_value(f, inc_flag)
