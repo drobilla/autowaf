@@ -229,9 +229,6 @@ def configure(conf):
         else:
             append_cxx_flags(['-DNDEBUG'])
 
-    set_modern_c_flags(conf)
-    set_modern_cxx_flags(conf)
-
     if conf.env.MSVC_COMPILER:
         Options.options.no_coverage = True
         if Options.options.strict:
@@ -307,7 +304,29 @@ def display_summary(conf):
         display_msg(conf, "Debuggable build", bool(conf.env['DEBUG']))
         display_msg(conf, "Build documentation", bool(conf.env['DOCS']))
 
+def set_c_lang(conf, lang):
+    "Set a specific C language standard, like 'c99' or 'c11'"
+    if conf.env.MSVC_COMPILER:
+        # MSVC has no hope or desire to compile C99, just compile as C++
+        conf.env.append_unique('CFLAGS', ['-TP'])
+    else:
+        flag = '-std=%s' % lang
+        conf.check(cflags=['-Werror', flag], msg="Checking for flag '%s'" % flag)
+        conf.env.append_unique('CFLAGS', [flag])
+
+def set_cxx_lang(conf, lang):
+    "Set a specific C++ language standard, like 'c++11', 'c++14', or 'c++17'"
+    if conf.env.MSVC_COMPILER:
+        if lang != 'c++14':
+            lang = 'c++latest'
+        conf.env.append_unique('CXXFLAGS', ['/std:%s' % lang])
+    else:
+        flag = '-std=%s' % lang
+        conf.check(cxxflags=['-Werror', flag], msg="Checking for flag '%s'" % flag)
+        conf.env.append_unique('CXXFLAGS', [flag])
+
 def set_modern_c_flags(conf):
+    "Use the most modern C language available"
     if 'COMPILER_CC' in conf.env:
         if conf.env.MSVC_COMPILER:
             # MSVC has no hope or desire to compile C99, just compile as C++
@@ -320,6 +339,7 @@ def set_modern_c_flags(conf):
                     break
 
 def set_modern_cxx_flags(conf, mandatory=False):
+    "Use the most modern C++ language available"
     if 'COMPILER_CXX' in conf.env:
         if conf.env.MSVC_COMPILER:
             conf.env.append_unique('CXXFLAGS', ['/std:c++latest'])
