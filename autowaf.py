@@ -259,19 +259,13 @@ def configure(conf):
                               '-Wwrite-strings',
                               '-fstrict-overflow'])
 
-        if not conf.check_cc(fragment = '''
-#ifndef __clang__
-#error
-#endif
-int main() { return 0; }''',
-                             features    = 'c',
-                             mandatory   = False,
-                             execute     = False,
-                             define_name = 'CLANG',
-                             msg         = 'Checking for clang'):
-            append_cxx_flags(['-Wlogical-op',
-                              '-Wsuggest-attribute=noreturn',
-                              '-Wunsafe-loop-optimizations'])
+            # Add less universal flags after checking they work
+            extra_flags = ['-Wlogical-op',
+                           '-Wsuggest-attribute=noreturn',
+                           '-Wunsafe-loop-optimizations']
+            if conf.check(cflags=['-Werror'] + extra_flags, mandatory=False,
+                          msg="Checking for extra warning flags"):
+                append_cxx_flags(extra_flags)
 
     if not conf.env['MSVC_COMPILER']:
         append_cxx_flags(['-fshow-column'])
