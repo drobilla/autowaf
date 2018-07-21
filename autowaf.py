@@ -25,8 +25,8 @@ global line_just
 line_just = 40
 
 # Compute dependencies globally
-#import preproc
-#preproc.go_absolute = True
+# import preproc
+# preproc.go_absolute = True
 
 class TestContext(Build.BuildContext):
     "Context for test command that inherits build context to make configuration available"
@@ -109,7 +109,7 @@ def check_header(conf, lang, name, define='', mandatory=True):
                    define_name=define,
                    mandatory=mandatory)
     else:
-        check_func(header_name=name, includes=includes, mandatory=mandatory)
+        check_func(header_name=name, mandatory=mandatory)
 
 def check_function(conf, lang, name, **args):
     "Check for a function"
@@ -135,12 +135,14 @@ def check_pkg(conf, name, **args):
     "Check for a package iff it hasn't been checked for yet"
     if args['uselib_store'].lower() in conf.env['AUTOWAF_LOCAL_LIBS']:
         return
+
     class CheckType:
         OPTIONAL = 1
         MANDATORY = 2
+
     var_name = 'CHECKED_' + nameify(args['uselib_store'])
-    check = not var_name in conf.env
-    mandatory = not 'mandatory' in args or args['mandatory']
+    check = var_name not in conf.env
+    mandatory = 'mandatory' not in args or args['mandatory']
     if not check and 'atleast_version' in args:
         # Re-check if version is newer than previous check
         checked_version = conf.env['VERSION_' + name]
@@ -181,6 +183,7 @@ def configure(conf):
     global g_step
     if g_step > 1:
         return
+
     def append_cxx_flags(flags):
         conf.env.append_value('CFLAGS', flags)
         conf.env.append_value('CXXFLAGS', flags)
@@ -284,7 +287,7 @@ def configure(conf):
             else:
                 conf.check_cc(lib='gcov', define_name='HAVE_GCOV', mandatory=False)
     except:
-        pass # Test options do not exist
+        pass  # Test options do not exist
 
     conf.env.prepend_value('CFLAGS', '-I' + os.path.abspath('.'))
     conf.env.prepend_value('CXXFLAGS', '-I' + os.path.abspath('.'))
@@ -377,7 +380,7 @@ def use_lib(bld, obj, libs):
             else:
                 inc_flag = '-iquote ' + os.path.join(abssrcdir, l.lower())
             for f in ['CFLAGS', 'CXXFLAGS']:
-                if not inc_flag in bld.env[f]:
+                if inc_flag not in bld.env[f]:
                     bld.env.prepend_value(f, inc_flag)
         else:
             append_property(obj, 'uselib', ' ' + l)
@@ -619,11 +622,11 @@ def build_i18n_pot(bld, srcdir, dir, name, sources, copyright_holder=None):
     pot_file = '%s.pot' % name
 
     cmd = ['xgettext',
-            '--keyword=_',
-            '--keyword=N_',
-            '--keyword=S_',
-            '--from-code=UTF-8',
-            '-o', pot_file]
+           '--keyword=_',
+           '--keyword=N_',
+           '--keyword=S_',
+           '--from-code=UTF-8',
+           '-o', pot_file]
 
     if copyright_holder:
         cmd += ['--copyright-holder="%s"' % copyright_holder]
@@ -649,7 +652,6 @@ def build_i18n_po(bld, srcdir, dir, name, sources, copyright_holder=None):
 def build_i18n_mo(bld, srcdir, dir, name, sources, copyright_holder=None):
     pwd = os.getcwd()
     os.chdir(os.path.join(srcdir, dir))
-    pot_file = '%s.pot' % name
     po_files = glob.glob('po/*.po')
     for po_file in po_files:
         mo_file = po_file.replace('.po', '.mo')
@@ -669,7 +671,6 @@ def build_i18n(bld, srcdir, dir, name, sources, copyright_holder=None):
     build_i18n_mo(bld, srcdir, dir, name, sources, copyright_holder)
 
 def cd_to_build_dir(ctx, appname):
-    orig_dir  = os.path.abspath(os.curdir)
     top_level = (len(ctx.stack_path) > 1)
     if top_level:
         os.chdir(os.path.join('build', appname))
@@ -691,7 +692,7 @@ def pre_test(ctx, appname, dirs=['src']):
         ctx.autowaf_local_tests_failed = 0
         ctx.autowaf_tests              = {}
 
-    ctx.autowaf_tests[appname] = { 'total': 0, 'failed': 0 }
+    ctx.autowaf_tests[appname] = {'total': 0, 'failed': 0}
 
     cd_to_build_dir(ctx, appname)
     if not ctx.env.NO_COVERAGE:
@@ -774,7 +775,7 @@ def run_test(ctx, appname, test, desired_status=0, dirs=['src'], name='', header
     ctx.autowaf_local_tests_total += 1
     ctx.autowaf_tests[appname]['total'] += 1
 
-    out = (None,None)
+    out = (None, None)
     if type(test) == list:
         name       = test[0]
         returncode = test[1]
@@ -782,8 +783,8 @@ def run_test(ctx, appname, test, desired_status=0, dirs=['src'], name='', header
         returncode = test()
     else:
         s = test
-        if type(test) == type([]):
-            s = ' '.join(i)
+        if isinstance(test, type([])):
+            s = ' '.join(test)
         if header and not quiet:
             Logs.pprint('Green', '\n** Test %s' % s)
         cmd = test
@@ -823,11 +824,14 @@ def begin_tests(ctx, appname, name='*'):
     ctx.autowaf_local_tests_failed = 0
     ctx.autowaf_local_tests_total  = 0
     Logs.pprint('GREEN', '\n** Begin %s tests' % tests_name(ctx, appname, name))
+
     class Handle:
         def __enter__(self):
             pass
+
         def __exit__(self, type, value, traceback):
             end_tests(ctx, appname, name)
+
     return Handle()
 
 def end_tests(ctx, appname, name='*'):
@@ -852,11 +856,11 @@ def run_tests(ctx, appname, tests, desired_status=0, dirs=['src'], name='*', hea
     end_tests(ctx, appname, name)
 
 def run_ldconfig(ctx):
-    if (ctx.cmd == 'install'
-        and not ctx.env['RAN_LDCONFIG']
-        and ctx.env['LIBDIR']
-        and not 'DESTDIR' in os.environ
-        and not Options.options.destdir):
+    if (ctx.cmd == 'install' and
+        not ctx.env['RAN_LDCONFIG'] and
+        ctx.env['LIBDIR'] and
+        'DESTDIR' not in os.environ and
+        not Options.options.destdir):
         try:
             Logs.info("Waf: Running `/sbin/ldconfig %s'" % ctx.env['LIBDIR'])
             subprocess.call(['/sbin/ldconfig', ctx.env['LIBDIR']])
@@ -933,7 +937,7 @@ def get_rdf_news(name, in_files, top_entries=None, extra_entries=None, dev_dist=
 
 def write_news(entries, out_file):
     import textwrap
-    from time import strftime, strptime
+    from time import strftime
 
     if len(entries) == 0:
         return
@@ -965,7 +969,6 @@ def write_posts(entries, meta, out_dir, status='stable'):
 
     for i in entries:
         entry    = entries[i]
-        date     = i[0]
         revision = i[1]
         if entry['status'] != status:
             continue
@@ -994,7 +997,8 @@ def write_posts(entries, meta, out_dir, status='stable'):
 
         post.write('\n')
         if (len(entry['items']) > 0 and
-            not (len(entry['items']) == 1 and entry['items'][0] == 'Initial release')):
+            not (len(entry['items']) == 1 and
+                 entry['items'][0] == 'Initial release')):
             post.write('\nChanges:\n\n')
             for i in entry['items']:
                 post.write(' * %s\n' % i)
@@ -1004,9 +1008,9 @@ def write_posts(entries, meta, out_dir, status='stable'):
 def get_blurb(in_file):
     "Get the first paragram of a Markdown formatted file, skipping the title"
     f = open(in_file, 'r')
-    f.readline() # Title
-    f.readline() # Title underline
-    f.readline() # Blank
+    f.readline()  # Title
+    f.readline()  # Title underline
+    f.readline()  # Blank
     out = ''
     line = f.readline()
     while len(line) > 0 and line != '\n':
@@ -1024,7 +1028,6 @@ def get_news(in_file, entry_props={}):
 
     import re
     import rfc822
-    from time import strftime
 
     f       = open(in_file, 'r')
     entries = {}
