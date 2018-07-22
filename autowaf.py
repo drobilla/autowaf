@@ -267,9 +267,13 @@ def configure(conf):
             extra_flags = ['-Wlogical-op',
                            '-Wsuggest-attribute=noreturn',
                            '-Wunsafe-loop-optimizations']
-            if conf.check(cflags=['-Werror'] + extra_flags, mandatory=False,
-                          msg="Checking for extra warning flags"):
-                append_cxx_flags(extra_flags)
+            if conf.check_cc(cflags=['-Werror'] + extra_flags, mandatory=False,
+                             msg="Checking for extra C warning flags"):
+                conf.env.append_value('CFLAGS', extra_flags)
+            if 'COMPILER_CXX' in conf.env:
+                if conf.check_cxx(cxxflags=['-Werror'] + extra_flags, mandatory=False,
+                                  msg="Checking for extra C++ warning flags"):
+                    conf.env.append_value('CXXFLAGS', extra_flags)
 
     if not conf.env['MSVC_COMPILER']:
         append_cxx_flags(['-fshow-column'])
