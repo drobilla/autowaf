@@ -1,11 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
-# Autowaf, useful waf utilities with support for recursive projects
-# Copyright 2008-2016 David Robillard
-#
-# Licensed under the GNU GPL v2 or later, see COPYING file for details.
-
 import glob
 import os
 import subprocess
