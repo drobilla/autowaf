@@ -310,7 +310,8 @@ def configure(conf):
     # Define version in configuration
     appname = getattr(Context.g_module, Context.APPNAME, 'noname')
     version = getattr(Context.g_module, Context.VERSION, '0.0.0')
-    define(conf, appname.upper() + '_VERSION', version)
+    defname = appname.upper().replace('-', '_').replace('.', '_')
+    define(conf, defname + '_VERSION', version)
 
     conf.env.prepend_value('CFLAGS', '-I' + os.path.abspath('.'))
     conf.env.prepend_value('CXXFLAGS', '-I' + os.path.abspath('.'))
