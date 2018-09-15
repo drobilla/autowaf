@@ -318,7 +318,6 @@ def configure(conf):
 
 def display_summary(conf, msgs=None):
     global g_is_child
-    Logs.pprint('', '')
     if not g_is_child:
         display_msg(conf, "Install prefix", conf.env['PREFIX'])
         if 'COMPILER_CC' in conf.env:
@@ -330,8 +329,6 @@ def display_summary(conf, msgs=None):
 
     if msgs is not None:
         display_msgs(conf, msgs)
-
-    Logs.pprint('', '')
 
 def set_c_lang(conf, lang):
     "Set a specific C language standard, like 'c99' or 'c11'"
