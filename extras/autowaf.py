@@ -180,6 +180,16 @@ def check_pkg(conf, name, **args):
     else:
         conf.env[var_name] = CheckType.OPTIONAL
 
+    if not conf.env.MSVC_COMPILER and 'system' in args and args['system']:
+        includes = conf.env['INCLUDES_' + nameify(args['uselib_store'])]
+        for path in includes:
+            if 'COMPILER_CC' in conf.env:
+                conf.env.append_value('CFLAGS', ['-isystem', path])
+            if 'COMPILER_CXX' in conf.env:
+                conf.env.append_value('CXXFLAGS', ['-isystem', path])
+
+        conf.env.append_value('CXXFLAGS', ['-isystem', '/usr/local/include'])
+
 def normpath(path):
     if sys.platform == 'win32':
         return os.path.normpath(path).replace('\\', '/')
