@@ -441,6 +441,8 @@ def set_lib_env(conf, name, version):
     conf.env['LIBPATH_' + NAME]  = [conf.env.LIBDIR]
     conf.env['LIB_' + NAME]      = [lib_name]
 
+    conf.define(NAME + '_VERSION', version)
+
 def set_line_just(conf, width):
     global line_just
     line_just = max(line_just, width)
