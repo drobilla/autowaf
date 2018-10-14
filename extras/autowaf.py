@@ -878,8 +878,8 @@ def run_test(ctx,
             Logs.pprint('RED', test)
 
     if Options.options.verbose_tests and type(test) != list and not callable(test):
-        sys.stdout.write(out[0])
-        sys.stderr.write(out[1])
+        sys.stdout.write(out[0].decode('utf-8'))
+        sys.stderr.write(out[1].decode('utf-8'))
 
     return (success, out)
 
