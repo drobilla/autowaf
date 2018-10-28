@@ -873,6 +873,7 @@ def run_test(ctx,
     else:
         Logs.pprint('RED', '** FAIL %s' % name)
         ctx.autowaf_tests_failed += 1
+        ctx.autowaf_local_tests_failed += 1
         ctx.autowaf_tests[appname]['failed'] += 1
         if type(test) != list and not callable(test):
             Logs.pprint('RED', test)
