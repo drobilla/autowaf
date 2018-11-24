@@ -2,6 +2,7 @@ import glob
 import os
 import subprocess
 import sys
+import time
 
 from waflib import Build, Context, Logs, Options, Utils
 from waflib.TaskGen import feature, before, after
@@ -742,6 +743,7 @@ def pre_test(ctx, appname, dirs=['src']):
     Logs.pprint('GREEN', '\n[==========] Running %s tests' % appname)
 
     if not hasattr(ctx, 'autowaf_tests_total'):
+        ctx.autowaf_tests_start_time   = time.clock()
         ctx.autowaf_tests_total        = 0
         ctx.autowaf_tests_failed       = 0
         ctx.autowaf_local_tests_total  = 0
@@ -806,11 +808,12 @@ def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
             coverage_lcov.close()
             coverage_log.close()
 
+    duration = (time.clock() - ctx.autowaf_tests_start_time) * 1000.0
     total_tests = ctx.autowaf_tests[appname]['total']
     failed_tests = ctx.autowaf_tests[appname]['failed']
     passed_tests = total_tests - failed_tests
-    Logs.pprint('GREEN', '[==========] %d tests from %s ran' % (
-        total_tests, appname))
+    Logs.pprint('GREEN', '[==========] %d tests from %s ran (%d ms total)' % (
+        total_tests, appname, duration))
     if not ctx.env.NO_COVERAGE:
         Logs.pprint('GREEN', '[----------] Coverage: <file://%s>'
                     % os.path.abspath('coverage/index.html'))
@@ -892,6 +895,7 @@ def tests_name(ctx, appname, name='*'):
 def begin_tests(ctx, appname, name='*'):
     ctx.autowaf_local_tests_failed = 0
     ctx.autowaf_local_tests_total  = 0
+    ctx.autowaf_local_tests_start_time = time.clock()
     Logs.pprint('GREEN', '[----------] %s' % (
         tests_name(ctx, appname, name)))
 
@@ -905,14 +909,15 @@ def begin_tests(ctx, appname, name='*'):
     return Handle()
 
 def end_tests(ctx, appname, name='*'):
+    duration = (time.clock() - ctx.autowaf_local_tests_start_time) * 1000.0
     total = ctx.autowaf_local_tests_total
     failures = ctx.autowaf_local_tests_failed
     if failures == 0:
-        Logs.pprint('GREEN', '[----------] %d tests from %s\n' % (
-            ctx.autowaf_local_tests_total, tests_name(ctx, appname, name)))
+        Logs.pprint('GREEN', '[----------] %d tests from %s (%d ms total)\n' % (
+            ctx.autowaf_local_tests_total, tests_name(ctx, appname, name), duration))
     else:
-        Logs.pprint('RED', '[----------] %d/%d tests from %s\n' % (
-            total - failures, total, tests_name(ctx, appname, name)))
+        Logs.pprint('RED', '[----------] %d/%d tests from %s (%d ms total)\n' % (
+            total - failures, total, tests_name(ctx, appname, name), duration))
 
 def run_tests(ctx,
               appname,
