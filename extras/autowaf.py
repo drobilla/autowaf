@@ -69,7 +69,7 @@ def set_options(opt, debug_by_default=False, test=False):
     opts.add_option('-s', '--strict', action='store_true', default=False,
                     dest='strict',
                     help="use strict compiler flags and show all warnings")
-    opts.add_option('--ultra-strict', action='store_true', default=False,
+    opts.add_option('-S', '--ultra-strict', action='store_true', default=False,
                     dest='ultra_strict',
                     help="use extremely strict compiler flags (likely noisy)")
     opts.add_option('--docs', action='store_true', default=False, dest='docs',
