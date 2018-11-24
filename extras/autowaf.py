@@ -768,6 +768,9 @@ def pre_test(ctx, appname, dirs=['src']):
         finally:
             clear_log.close()
 
+class TestFailed(Exception):
+    pass
+
 def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
     if not ctx.env.NO_COVERAGE:
         diropts  = ''
@@ -812,7 +815,7 @@ def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
     total_tests = ctx.autowaf_tests[appname]['total']
     failed_tests = ctx.autowaf_tests[appname]['failed']
     passed_tests = total_tests - failed_tests
-    Logs.pprint('GREEN', '[==========] %d tests from %s ran (%d ms total)' % (
+    Logs.pprint('GREEN', '\n[==========] %d tests from %s ran (%d ms total)' % (
         total_tests, appname, duration))
     if not ctx.env.NO_COVERAGE:
         Logs.pprint('GREEN', '[----------] Coverage: <file://%s>'
@@ -897,7 +900,7 @@ def begin_tests(ctx, appname, name='*'):
     ctx.autowaf_local_tests_failed = 0
     ctx.autowaf_local_tests_total  = 0
     ctx.autowaf_local_tests_start_time = time.clock()
-    Logs.pprint('GREEN', '[----------] %s' % (
+    Logs.pprint('GREEN', '\n[----------] %s' % (
         tests_name(ctx, appname, name)))
 
     class Handle:
@@ -914,10 +917,10 @@ def end_tests(ctx, appname, name='*'):
     total = ctx.autowaf_local_tests_total
     failures = ctx.autowaf_local_tests_failed
     if failures == 0:
-        Logs.pprint('GREEN', '[----------] %d tests from %s (%d ms total)\n' % (
+        Logs.pprint('GREEN', '[----------] %d tests from %s (%d ms total)' % (
             ctx.autowaf_local_tests_total, tests_name(ctx, appname, name), duration))
     else:
-        Logs.pprint('RED', '[----------] %d/%d tests from %s (%d ms total)\n' % (
+        Logs.pprint('RED', '[----------] %d/%d tests from %s (%d ms total)' % (
             total - failures, total, tests_name(ctx, appname, name), duration))
 
 def run_tests(ctx,
