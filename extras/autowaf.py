@@ -249,16 +249,37 @@ def configure(conf):
             conf.env['CXXFLAGS'] = ['-O0', '-g']
     else:
         if conf.env['MSVC_COMPILER']:
-            conf.env['CFLAGS']   = ['/MD', '/FS', '/DNDEBUG']
-            conf.env['CXXFLAGS'] = ['/MD', '/FS', '/DNDEBUG']
+            append_cxx_flags(['/MD', '/FS', '/DNDEBUG'])
         else:
             append_cxx_flags(['-DNDEBUG'])
 
     if conf.env.MSVC_COMPILER:
         Options.options.no_coverage = True
-        if Options.options.strict:
-            conf.env.append_value('CFLAGS', ['/Wall'])
-            conf.env.append_value('CXXFLAGS', ['/Wall'])
+        append_cxx_flags(['/nologo',
+                          '/FS',
+                          '/DNDEBUG',
+                          '/D_CRT_SECURE_NO_WARNINGS',
+                          '/experimental:external',
+                          '/external:W0',
+                          '/external:anglebrackets'])
+        conf.env.append_value('LINKFLAGS', '/nologo')
+        if Options.options.strict or Options.options.ultra_strict:
+            ms_strict_flags = ['/Wall',
+                               '/wd4061',
+                               '/wd4200',
+                               '/wd4514',
+                               '/wd4571',
+                               '/wd4625',
+                               '/wd4626',
+                               '/wd4706',
+                               '/wd4710',
+                               '/wd4820',
+                               '/wd5026',
+                               '/wd5027',
+                               '/wd5045']
+            conf.env.append_value('CFLAGS', ms_strict_flags)
+            conf.env.append_value('CXXFLAGS', ms_strict_flags)
+            conf.env.append_value('CXXFLAGS', ['/EHsc'])
     else:
         if Options.options.ultra_strict:
             Options.options.strict = True
@@ -346,7 +367,7 @@ def set_c_lang(conf, lang):
     "Set a specific C language standard, like 'c99' or 'c11'"
     if conf.env.MSVC_COMPILER:
         # MSVC has no hope or desire to compile C99, just compile as C++
-        conf.env.append_unique('CFLAGS', ['-TP'])
+        conf.env.append_unique('CFLAGS', ['/TP'])
     else:
         flag = '-std=%s' % lang
         conf.check(cflags=['-Werror', flag],
@@ -370,7 +391,7 @@ def set_modern_c_flags(conf):
     if 'COMPILER_CC' in conf.env:
         if conf.env.MSVC_COMPILER:
             # MSVC has no hope or desire to compile C99, just compile as C++
-            conf.env.append_unique('CFLAGS', ['-TP'])
+            conf.env.append_unique('CFLAGS', ['/TP'])
         else:
             for flag in ['-std=c11', '-std=c99']:
                 if conf.check(cflags=['-Werror', flag], mandatory=False,
