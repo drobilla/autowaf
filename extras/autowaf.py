@@ -87,9 +87,6 @@ def set_options(opt, debug_by_default=False, test=False):
         test_opts.add_option('--wrapper', type='string',
                              dest='test_wrapper',
                              help='command prefix for tests (e.g. valgrind)')
-        test_opts.add_option('--verbose-tests', action='store_true',
-                             default=False, dest='verbose_tests',
-                             help='always show test output')
 
     g_step = 1
 
@@ -905,7 +902,7 @@ def run_test(ctx,
         if type(test) != list and not callable(test):
             Logs.pprint('RED', test)
 
-    if Options.options.verbose_tests and type(test) != list and not callable(test):
+    if Options.options.verbose and type(test) != list and not callable(test):
         sys.stdout.write(out[0].decode('utf-8'))
         sys.stderr.write(out[1].decode('utf-8'))
 
