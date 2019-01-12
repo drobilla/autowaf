@@ -757,11 +757,17 @@ def cd_to_orig_dir(ctx, child):
     else:
         os.chdir('..')
 
+def bench_time():
+    if hasattr(time, 'perf_counter'): # Added in Python 3.3
+        return time.perf_counter()
+    else:
+        return time.time()
+
 def pre_test(ctx, appname, dirs=['src']):
     Logs.pprint('GREEN', '\n[==========] Running %s tests' % appname)
 
     if not hasattr(ctx, 'autowaf_tests_total'):
-        ctx.autowaf_tests_start_time   = time.clock()
+        ctx.autowaf_tests_start_time   = bench_time()
         ctx.autowaf_tests_total        = 0
         ctx.autowaf_tests_failed       = 0
         ctx.autowaf_local_tests_total  = 0
@@ -829,7 +835,7 @@ def post_test(ctx, appname, dirs=['src'], remove=['*boost*', 'c++*']):
             coverage_lcov.close()
             coverage_log.close()
 
-    duration = (time.clock() - ctx.autowaf_tests_start_time) * 1000.0
+    duration = (bench_time() - ctx.autowaf_tests_start_time) * 1000.0
     total_tests = ctx.autowaf_tests[appname]['total']
     failed_tests = ctx.autowaf_tests[appname]['failed']
     passed_tests = total_tests - failed_tests
@@ -917,7 +923,7 @@ def tests_name(ctx, appname, name='*'):
 def begin_tests(ctx, appname, name='*'):
     ctx.autowaf_local_tests_failed = 0
     ctx.autowaf_local_tests_total  = 0
-    ctx.autowaf_local_tests_start_time = time.clock()
+    ctx.autowaf_local_tests_start_time = bench_time()
     Logs.pprint('GREEN', '\n[----------] %s' % (
         tests_name(ctx, appname, name)))
 
@@ -931,7 +937,7 @@ def begin_tests(ctx, appname, name='*'):
     return Handle()
 
 def end_tests(ctx, appname, name='*'):
-    duration = (time.clock() - ctx.autowaf_local_tests_start_time) * 1000.0
+    duration = (bench_time() - ctx.autowaf_local_tests_start_time) * 1000.0
     total = ctx.autowaf_local_tests_total
     failures = ctx.autowaf_local_tests_failed
     if failures == 0:
