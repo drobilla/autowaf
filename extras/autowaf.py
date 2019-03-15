@@ -4,7 +4,7 @@ import subprocess
 import sys
 import time
 
-from waflib import Build, Context, Logs, Options, Utils
+from waflib import Configure, Build, Context, Logs, Options, Utils
 from waflib.TaskGen import feature, before, after
 
 global g_is_child
@@ -101,6 +101,16 @@ def add_flags(opt, flags):
     for name, desc in flags.items():
         opt.add_option('--' + name, action='store_true',
                        dest=name.replace('-', '_'), help=desc)
+
+class ConfigureContext(Configure.ConfigurationContext):
+    """configures the project"""
+
+    def __init__(self, **kwargs):
+        super(ConfigureContext, self).__init__(**kwargs)
+
+    def build_path(self, path='.'):
+        """Return `path` within the build directory"""
+        return str(self.path.get_bld().find_node(path))
 
 def get_check_func(conf, lang):
     if lang == 'c':
