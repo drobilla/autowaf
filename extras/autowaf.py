@@ -17,6 +17,13 @@ g_step = 0
 global line_just
 line_just = 40
 
+if sys.platform == 'win32':
+    lib_path_name = 'PATH'
+elif sys.platform == 'darwin':
+    lib_path_name = 'DYLD_LIBRARY_PATH'
+else:
+    lib_path_name = 'LD_LIBRARY_PATH'
+
 # Compute dependencies globally
 # import preproc
 # preproc.go_absolute = True
