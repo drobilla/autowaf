@@ -775,6 +775,34 @@ def cd_to_orig_dir(ctx, child):
     else:
         os.chdir('..')
 
+def show_diff(from_lines, to_lines, from_filename, to_filename):
+    import difflib
+    import sys
+
+    for line in difflib.unified_diff(
+            from_lines, to_lines,
+            fromfile=os.path.abspath(from_filename),
+            tofile=os.path.abspath(to_filename)):
+        sys.stderr.write(line)
+
+def test_file_equals(patha, pathb):
+    import filecmp
+    import io
+
+    for path in (patha, pathb):
+        if not os.access(path, os.F_OK):
+            Logs.pprint('RED', 'error: missing file %s' % path)
+            return False
+
+    if filecmp.cmp(patha, pathb, shallow=False):
+        return True
+
+    with io.open(patha, 'rU', encoding='utf-8') as fa:
+        with io.open(pathb, 'rU', encoding='utf-8') as fb:
+            show_diff(fa.readlines(), fb.readlines(), patha, pathb)
+
+    return False
+
 def bench_time():
     if hasattr(time, 'perf_counter'): # Added in Python 3.3
         return time.perf_counter()
