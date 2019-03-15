@@ -4,7 +4,7 @@ import subprocess
 import sys
 import time
 
-from waflib import Configure, Build, Context, Logs, Options, Utils
+from waflib import Configure, ConfigSet, Build, Context, Logs, Options, Utils
 from waflib.TaskGen import feature, before, after
 
 global g_is_child
@@ -101,6 +101,11 @@ class ConfigureContext(Configure.ConfigurationContext):
 
     def __init__(self, **kwargs):
         super(ConfigureContext, self).__init__(**kwargs)
+        self.run_env = ConfigSet.ConfigSet()
+
+    def store(self):
+        self.env.AUTOWAF_RUN_ENV = self.run_env.get_merged_dict()
+        super(ConfigureContext, self).store()
 
     def build_path(self, path='.'):
         """Return `path` within the build directory"""
@@ -482,6 +487,7 @@ def set_lib_env(conf, name, version):
     conf.env['LIBPATH_' + NAME]  = lib_path
     conf.env['LIB_' + NAME]      = [lib_name]
 
+    conf.run_env.append_unique(lib_path_name, lib_path)
     conf.define(NAME + '_VERSION', version)
 
 def set_line_just(conf, width):
