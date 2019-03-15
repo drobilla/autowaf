@@ -480,11 +480,12 @@ def set_lib_env(conf, name, version):
     major_ver    = version.split('.')[0]
     pkg_var_name = 'PKG_' + name.replace('-', '_') + '_' + major_ver
     lib_name     = '%s-%s' % (name, major_ver)
+    lib_path     = [str(conf.path.get_bld())]
     if conf.env.PARDEBUG:
         lib_name += 'D'
     conf.env[pkg_var_name]       = lib_name
     conf.env['INCLUDES_' + NAME] = ['${INCLUDEDIR}/%s-%s' % (name, major_ver)]
-    conf.env['LIBPATH_' + NAME]  = [conf.env.LIBDIR]
+    conf.env['LIBPATH_' + NAME]  = lib_path
     conf.env['LIB_' + NAME]      = [lib_name]
 
     conf.define(NAME + '_VERSION', version)
