@@ -762,6 +762,30 @@ def build_i18n(bld, srcdir, dir, name, sources, copyright_holder=None):
     build_i18n_po(bld, srcdir, dir, name, sources, copyright_holder)
     build_i18n_mo(bld, srcdir, dir, name, sources, copyright_holder)
 
+class ExecutionEnvironment:
+    """Context that sets system environment variables for program execution"""
+    def __init__(self, changes):
+        self.original_environ = os.environ.copy()
+
+        self.diff = {}
+        for path_name, paths in changes.items():
+            value = os.pathsep.join(paths)
+            if path_name in os.environ:
+                value += os.pathsep + os.environ[path_name]
+
+            self.diff[path_name] = value
+
+        os.environ.update(self.diff)
+
+    def __str__(self):
+        return '\n'.join({'%s="%s"' % (k, v) for k, v in self.diff.items()})
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        os.environ = self.original_environ
+
 def cd_to_build_dir(ctx, appname):
     top_level = (len(ctx.stack_path) > 1)
     if top_level:
