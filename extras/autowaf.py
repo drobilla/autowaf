@@ -28,12 +28,6 @@ else:
 # import preproc
 # preproc.go_absolute = True
 
-# Test context that inherits build context to make configuration available
-class TestContext(Build.BuildContext):
-    "Run tests"
-    cmd = 'test'
-    fun = 'test'
-
 @feature('c', 'cxx')
 @after('apply_incpaths')
 def include_config_h(self):
@@ -832,6 +826,10 @@ def bench_time():
         return time.perf_counter()
     else:
         return time.time()
+
+class TestContext(Build.BuildContext):
+    "runs test suite"
+    fun = cmd = 'test'
 
 def pre_test(ctx, appname, dirs=['src']):
     Logs.pprint('GREEN', '\n[==========] Running %s tests' % appname)
