@@ -623,7 +623,8 @@ def make_simple_dox(name):
         os.chdir(top)
     except Exception as e:
         Logs.error("Failed to fix up %s documentation: %s" % (name, e))
-
+    finally:
+        os.chdir(top)
 
 def build_dox(bld, name, version, srcdir, blddir, outdir='', versioned=True):
     """Build Doxygen API documentation"""
