@@ -104,6 +104,10 @@ class ConfigureContext(Configure.ConfigurationContext):
         super(ConfigureContext, self).__init__(**kwargs)
         self.run_env = ConfigSet.ConfigSet()
 
+    def pre_recurse(self, node):
+        display_header('Configuring %s' % node.parent.srcpath())
+        super(ConfigureContext, self).pre_recurse(node)
+
     def store(self):
         self.env.AUTOWAF_RUN_ENV = self.run_env.get_merged_dict()
         super(ConfigureContext, self).store()
