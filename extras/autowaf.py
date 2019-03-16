@@ -33,7 +33,7 @@ else:
 def include_config_h(self):
     self.env.append_value('INCPATHS', self.bld.bldnode.abspath())
 
-def set_options(opt, debug_by_default=False, test=False):
+def set_options(opt, debug_by_default=False):
     "Add standard autowaf options if they havn't been added yet"
     global g_step
     if g_step > 0:
@@ -78,7 +78,7 @@ def set_options(opt, debug_by_default=False, test=False):
                     help="build documentation (requires doxygen)")
 
     # Test options
-    if test:
+    if hasattr(Context.g_module, 'test'):
         test_opts = opt.add_option_group('Test options', '')
         opts.add_option('-T', '--test', action='store_true', dest='build_tests',
                         help='build unit tests')
