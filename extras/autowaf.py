@@ -10,9 +10,6 @@ from waflib.TaskGen import feature, before, after
 global g_is_child
 g_is_child = False
 
-# Only run autowaf hooks once (even if sub projects call several times)
-global g_step
-g_step = 0
 
 if sys.platform == 'win32':
     lib_path_name = 'PATH'
@@ -30,12 +27,22 @@ else:
 def include_config_h(self):
     self.env.append_value('INCPATHS', self.bld.bldnode.abspath())
 
-def set_options(opt, debug_by_default=False):
-    "Add standard autowaf options if they havn't been added yet"
-    global g_step
-    if g_step > 0:
-        return
+class OptionsContext(Options.OptionsContext):
+    def __init__(self, **kwargs):
+        super(OptionsContext, self).__init__(**kwargs)
+        set_options(self)
 
+    def configuration_options(self):
+        return self.get_option_group('Configuration options')
+
+    def add_flags(self, group, flags):
+        """Tersely add flags (a dictionary of longname:desc) to a group"""
+        for name, desc in flags.items():
+            group.add_option('--' + name, action='store_true',
+                             dest=name.replace('-', '_'), help=desc)
+
+def set_options(opt, debug_by_default=False):
+    "Add standard autowaf options"
     opts = opt.get_option_group('Configuration options')
 
     # Standard directory options
@@ -85,13 +92,6 @@ def set_options(opt, debug_by_default=False):
         test_opts.add_option('--wrapper', type='string',
                              dest='test_wrapper',
                              help='command prefix for tests (e.g. valgrind)')
-
-    g_step = 1
-
-def add_flags(opt, flags):
-    for name, desc in flags.items():
-        opt.add_option('--' + name, action='store_true',
-                       dest=name.replace('-', '_'), help=desc)
 
 class ConfigureContext(Configure.ConfigurationContext):
     """configures the project"""
@@ -217,10 +217,6 @@ def normpath(path):
         return os.path.normpath(path)
 
 def configure(conf):
-    global g_step
-    if g_step > 1:
-        return
-
     def append_cxx_flags(flags):
         conf.env.append_value('CFLAGS', flags)
         conf.env.append_value('CXXFLAGS', flags)
@@ -366,7 +362,6 @@ def configure(conf):
 
     conf.env.prepend_value('CFLAGS', '-I' + os.path.abspath('.'))
     conf.env.prepend_value('CXXFLAGS', '-I' + os.path.abspath('.'))
-    g_step = 2
 
 def display_summary(conf, msgs=None):
     global g_is_child
