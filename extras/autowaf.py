@@ -107,7 +107,8 @@ class ConfigureContext(Configure.ConfigurationContext):
         self.system_include_paths = set()
 
     def pre_recurse(self, node):
-        display_header('Configuring %s' % node.parent.srcpath())
+        if len(self.stack_path) == 1:
+            Logs.pprint('BOLD', 'Configuring %s' % node.parent.srcpath())
         super(ConfigureContext, self).pre_recurse(node)
 
     def store(self):
@@ -365,8 +366,7 @@ def configure(conf):
     conf.env.prepend_value('CXXFLAGS', '-I' + os.path.abspath('.'))
 
 def display_summary(conf, msgs=None):
-    global g_is_child
-    if not g_is_child:
+    if len(conf.stack_path) == 1:
         display_msg(conf, "Install prefix", conf.env['PREFIX'])
         if 'COMPILER_CC' in conf.env:
             display_msg(conf, "C Flags", ' '.join(conf.env['CFLAGS']))
@@ -491,11 +491,6 @@ def set_lib_env(conf, name, version):
 
     conf.run_env.append_unique(lib_path_name, lib_path)
     conf.define(NAME + '_VERSION', version)
-
-def display_header(title):
-    global g_is_child
-    if g_is_child:
-        Logs.pprint('BOLD', title)
 
 def display_msg(conf, msg, status=None, color=None):
     color = 'CYAN'
