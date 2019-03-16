@@ -14,9 +14,6 @@ g_is_child = False
 global g_step
 g_step = 0
 
-global line_just
-line_just = 40
-
 if sys.platform == 'win32':
     lib_path_name = 'PATH'
 elif sys.platform == 'darwin':
@@ -100,6 +97,10 @@ class ConfigureContext(Configure.ConfigurationContext):
     """configures the project"""
 
     def __init__(self, **kwargs):
+        self.line_just = 45
+        if hasattr(Context.g_module, 'line_just'):
+            self.line_just = Context.g_module.line_just
+
         super(ConfigureContext, self).__init__(**kwargs)
         self.run_env = ConfigSet.ConfigSet()
 
@@ -489,11 +490,6 @@ def set_lib_env(conf, name, version):
 
     conf.run_env.append_unique(lib_path_name, lib_path)
     conf.define(NAME + '_VERSION', version)
-
-def set_line_just(conf, width):
-    global line_just
-    line_just = max(line_just, width)
-    conf.line_just = line_just
 
 def display_header(title):
     global g_is_child
