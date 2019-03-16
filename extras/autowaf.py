@@ -94,6 +94,11 @@ def set_options(opt, debug_by_default=False):
                              dest='test_wrapper',
                              help='command prefix for tests (e.g. valgrind)')
 
+    # Run options
+    run_opts = opt.add_option_group('Run options')
+    run_opts.add_option('--cmd', type='string', dest='cmd',
+                        help='command to run from build directory')
+
 class ConfigureContext(Configure.ConfigurationContext):
     """configures the project"""
 
@@ -778,6 +783,25 @@ class ExecutionEnvironment:
 
     def __exit__(self, type, value, traceback):
         os.environ = self.original_environ
+
+class RunContext(Build.BuildContext):
+    "runs an executable from the build directory"
+    cmd = 'run'
+
+    def execute(self):
+        self.restore()
+        if not self.all_envs:
+            self.load_envs()
+
+        with ExecutionEnvironment(self.env.AUTOWAF_RUN_ENV) as env:
+            if Options.options.verbose:
+                Logs.pprint('GREEN', str(env) + '\n')
+
+            if Options.options.cmd:
+                Logs.pprint('GREEN', 'Running %s' % Options.options.cmd)
+                subprocess.call(Options.options.cmd, shell=True)
+            else:
+                Logs.error("error: Missing --cmd option for run command")
 
 def show_diff(from_lines, to_lines, from_filename, to_filename):
     import difflib
