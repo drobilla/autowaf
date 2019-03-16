@@ -103,6 +103,7 @@ class ConfigureContext(Configure.ConfigurationContext):
 
         super(ConfigureContext, self).__init__(**kwargs)
         self.run_env = ConfigSet.ConfigSet()
+        self.system_include_paths = set()
 
     def pre_recurse(self, node):
         display_header('Configuring %s' % node.parent.srcpath())
@@ -110,6 +111,12 @@ class ConfigureContext(Configure.ConfigurationContext):
 
     def store(self):
         self.env.AUTOWAF_RUN_ENV = self.run_env.get_merged_dict()
+        for path in sorted(self.system_include_paths):
+            if 'COMPILER_CC' in self.env:
+                self.env.append_value('CFLAGS', ['-isystem', path])
+            if 'COMPILER_CXX' in self.env:
+                self.env.append_value('CXXFLAGS', ['-isystem', path])
+
         super(ConfigureContext, self).store()
 
     def build_path(self, path='.'):
@@ -200,14 +207,8 @@ def check_pkg(conf, name, **args):
         conf.env[var_name] = CheckType.OPTIONAL
 
     if not conf.env.MSVC_COMPILER and 'system' in args and args['system']:
-        includes = conf.env['INCLUDES_' + nameify(args['uselib_store'])]
-        for path in includes:
-            if 'COMPILER_CC' in conf.env:
-                conf.env.append_value('CFLAGS', ['-isystem', path])
-            if 'COMPILER_CXX' in conf.env:
-                conf.env.append_value('CXXFLAGS', ['-isystem', path])
-
-        conf.env.append_value('CXXFLAGS', ['-isystem', '/usr/local/include'])
+        conf.system_include_paths.update(
+            conf.env['INCLUDES_' + nameify(args['uselib_store'])])
 
 def normpath(path):
     if sys.platform == 'win32':
