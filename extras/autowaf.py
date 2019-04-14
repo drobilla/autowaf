@@ -539,7 +539,7 @@ def build_pc(bld, name, version, version_suffix, libs, subst_dict={}):
     """
 
     pkg_prefix       = bld.env['PREFIX']
-    if pkg_prefix[-1] == '/':
+    if len(pkg_prefix) > 1 and pkg_prefix[-1] == '/':
         pkg_prefix = pkg_prefix[:-1]
 
     target = name.lower()
