@@ -994,7 +994,7 @@ class TestContext(Build.BuildContext):
         Logs.info("Waf: Entering directory `%s'\n", bld_dir)
         os.chdir(str(bld_dir))
 
-        if str(node.parent) == Context.top_dir:
+        if not self.env.NO_COVERAGE and str(node.parent) == Context.top_dir:
             self.clear_coverage()
 
         self.log_good('=' * 10, 'Running %s tests', group_name)
