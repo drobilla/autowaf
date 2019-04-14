@@ -1029,7 +1029,7 @@ class TestContext(Build.BuildContext):
                 self.gen_coverage()
 
             if os.path.exists('coverage/index.html'):
-                self.log_good('COVERAGE', '<file://%s>',
+                self.log_good('REPORT', '<file://%s>',
                               os.path.abspath('coverage/index.html'))
 
         successes = scope.n_total - scope.n_failed
@@ -1100,6 +1100,19 @@ class TestContext(Build.BuildContext):
                                  '--rc', 'genhtml_branch_coverage=1',
                                  'cov.lcov'],
                                 stdout=log, stderr=log)
+
+            summary = subprocess.check_output(
+                ['lcov', '--summary',
+                 '--rc', 'lcov_branch_coverage=1',
+                 'cov.lcov'],
+                stderr=subprocess.STDOUT).decode('ascii')
+
+            import re
+            lines = re.search('lines\.*: (.*)%.*', summary).group(1)
+            functions = re.search('functions\.*: (.*)%.*', summary).group(1)
+            branches = re.search('branches\.*: (.*)%.*', summary).group(1)
+            self.log_good('COVERAGE', '%s%% lines, %s%% functions, %s%% branches',
+                          lines, functions, branches)
 
         except Exception:
             Logs.warn('Failed to run lcov to generate coverage report')
