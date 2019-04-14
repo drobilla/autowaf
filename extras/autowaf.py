@@ -93,6 +93,9 @@ def set_options(opt, debug_by_default=False):
         test_opts.add_option('--wrapper', type='string',
                              dest='test_wrapper',
                              help='command prefix for tests (e.g. valgrind)')
+        test_opts.add_option('--test-filter', type='string',
+                             dest='test_filter',
+                             help='regular expression for tests to run')
 
     # Run options
     run_opts = opt.add_option_group('Run options')
@@ -866,12 +869,26 @@ class TestScope:
         self.n_total = 0
 
     def run(self, test, **kwargs):
+        if type(test) == list and 'name' not in kwargs:
+            import pipes
+            kwargs['name'] = ' '.join(map(pipes.quote, test))
+
+        if Options.options.test_filter and 'name' in kwargs:
+            import re
+            found = False
+            for scope in self.tst.stack:
+                if re.search(Options.options.test_filter, scope.name):
+                    found = True
+                    break
+
+            if (not found and
+                not re.search(Options.options.test_filter, self.name) and
+                not re.search(Options.options.test_filter, kwargs['name'])):
+                return True
+
         if callable(test):
             output = self._run_callable(test, **kwargs)
         elif type(test) == list:
-            if 'name' not in kwargs:
-                import pipes
-                kwargs['name'] = ' '.join(map(pipes.quote, test))
 
             output = self._run_command(test, **kwargs)
         else:
