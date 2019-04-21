@@ -128,7 +128,7 @@ class ConfigureContext(Configure.ConfigurationContext):
 
     def build_path(self, path='.'):
         """Return `path` within the build directory"""
-        return str(self.path.get_bld().find_node(path))
+        return str(self.path.get_bld().make_node(path))
 
 def get_check_func(conf, lang):
     if lang == 'c':
