@@ -7,9 +7,6 @@ import time
 from waflib import Configure, ConfigSet, Build, Context, Logs, Options, Utils
 from waflib.TaskGen import feature, before, after
 
-global g_is_child
-g_is_child = False
-
 NONEMPTY = -10
 
 if sys.platform == 'win32':
@@ -518,14 +515,6 @@ def compile_flags(env, lib):
     return ' '.join(map(lambda x: env['CPPPATH_ST'] % x,
                         env['INCLUDES_' + lib]))
 
-def set_recursive():
-    global g_is_child
-    g_is_child = True
-
-def is_child():
-    global g_is_child
-    return g_is_child
-
 def build_pc(bld, name, version, version_suffix, libs, subst_dict={}):
     """Build a pkg-config file for a library.
 
@@ -580,13 +569,6 @@ def build_pc(bld, name, version, version_suffix, libs, subst_dict={}):
 
     obj.__dict__.update(subst_dict)
 
-def build_dir(name, subdir):
-    if is_child():
-        return os.path.join('build', name, subdir)
-    else:
-        return os.path.join('build', subdir)
-
-
 def make_simple_dox(name):
     "Clean up messy Doxygen documentation after it is built"
     name = name.lower()
@@ -633,12 +615,8 @@ def build_dox(bld, name, version, srcdir, blddir, outdir='', versioned=True):
     if not bld.env['DOCS']:
         return
 
-    # Doxygen paths in are relative to the doxygen file, not build directory
-    if is_child():
-        src_dir = os.path.join(srcdir, name.lower())
-    else:
-        src_dir = srcdir
-
+    # Doxygen paths in are relative to the doxygen file
+    src_dir = bld.path.srcpath()
     subst_tg = bld(features='subst',
                    source='doc/reference.doxygen.in',
                    target='doc/reference.doxygen',
