@@ -323,6 +323,7 @@ def configure(conf):
                               '-Wextra',
                               '-Wmissing-declarations',
                               '-Wno-unused-parameter',
+                              '-Wno-parentheses',
                               '-Wstrict-overflow',
                               '-Wundef',
                               '-Wwrite-strings',
