@@ -454,26 +454,6 @@ def append_property(obj, key, val):
     else:
         setattr(obj, key, val)
 
-def use_lib(bld, obj, libs):
-    abssrcdir = os.path.abspath('.')
-    libs_list = libs.split()
-    for l in libs_list:
-        in_headers = l.lower() in bld.env['AUTOWAF_LOCAL_HEADERS']
-        in_libs    = l.lower() in bld.env['AUTOWAF_LOCAL_LIBS']
-        if in_libs:
-            append_property(obj, 'use', ' lib%s ' % l.lower())
-            append_property(obj, 'framework', bld.env['FRAMEWORK_' + l])
-        if in_headers or in_libs:
-            if bld.env.MSVC_COMPILER:
-                inc_flag = '/I' + os.path.join(abssrcdir, l.lower())
-            else:
-                inc_flag = '-iquote ' + os.path.join(abssrcdir, l.lower())
-            for f in ['CFLAGS', 'CXXFLAGS']:
-                if inc_flag not in bld.env[f]:
-                    bld.env.prepend_value(f, inc_flag)
-        else:
-            append_property(obj, 'uselib', ' ' + l)
-
 @feature('c', 'cxx')
 @before('apply_link')
 def version_lib(self):
@@ -484,22 +464,34 @@ def version_lib(self):
         if [x for x in applicable if x in self.features]:
             self.target = self.target + 'D'
 
-def set_lib_env(conf, name, version, has_objects=True):
+def set_lib_env(conf,
+                name,
+                version,
+                has_objects=True,
+                include_path=None,
+                lib_path=None):
     "Set up environment for local library as if found via pkg-config."
     NAME         = name.upper()
     major_ver    = version.split('.')[0]
     pkg_var_name = 'PKG_' + name.replace('-', '_') + '_' + major_ver
     lib_name     = '%s-%s' % (name, major_ver)
-    lib_path     = [str(conf.path.get_bld())]
+
+    if lib_path is None:
+        lib_path = str(conf.path.get_bld())
+
+    if include_path is None:
+        include_path = str(conf.path)
+
     if conf.env.PARDEBUG:
         lib_name += 'D'
+
     conf.env[pkg_var_name]       = lib_name
-    conf.env['INCLUDES_' + NAME] = ['${INCLUDEDIR}/%s-%s' % (name, major_ver)]
-    conf.env['LIBPATH_' + NAME]  = lib_path
+    conf.env['INCLUDES_' + NAME] = [include_path]
+    conf.env['LIBPATH_' + NAME]  = [lib_path]
     if has_objects:
         conf.env['LIB_' + NAME] = [lib_name]
 
-    conf.run_env.append_unique(lib_path_name, lib_path)
+    conf.run_env.append_unique(lib_path_name, [lib_path])
     conf.define(NAME + '_VERSION', version)
 
 def display_msg(conf, msg, status=None, color=None):
