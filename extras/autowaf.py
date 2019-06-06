@@ -1324,7 +1324,7 @@ def get_news(in_file, entry_props={}):
     """
 
     import re
-    import rfc822
+    import email.utils
 
     f       = open(in_file, 'r')
     entries = {}
@@ -1366,7 +1366,7 @@ def get_news(in_file, entry_props={}):
         # Read footer line
         foot    = f.readline()
         matches = re.compile(' -- (.*) <(.*)>  (.*)').match(foot)
-        entry['date']        = rfc822.parsedate(matches.group(3))
+        entry['date']        = email.utils.parsedate(matches.group(3))
         entry['blamee_name'] = matches.group(1)
         entry['blamee_mbox'] = matches.group(2)
         entry.update(entry_props)
