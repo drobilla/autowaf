@@ -604,6 +604,12 @@ def h_list(lst):
 	"""
 	return md5(repr(lst).encode()).digest()
 
+if sys.hexversion < 0x3000000:
+	def h_list_python2(lst):
+		return md5(repr(lst)).digest()
+	h_list_python2.__doc__ = h_list.__doc__
+	h_list = h_list_python2
+
 def h_fun(fun):
 	"""
 	Hash functions
@@ -879,7 +885,7 @@ def get_process():
 	except IndexError:
 		filepath = os.path.dirname(os.path.abspath(__file__)) + os.sep + 'processor.py'
 		cmd = [sys.executable, '-c', readf(filepath)]
-		return subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, bufsize=0)
+		return subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, bufsize=0, close_fds=not is_win32)
 
 def run_prefork_process(cmd, kwargs, cargs):
 	"""

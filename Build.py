@@ -1160,11 +1160,19 @@ class inst(Task.Task):
 				# same size and identical timestamps -> make no copy
 				if st1.st_mtime + 2 >= st2.st_mtime and st1.st_size == st2.st_size:
 					if not self.generator.bld.progress_bar:
-						Logs.info('- install %s (from %s)', tgt, lbl)
+
+						c1 = Logs.colors.NORMAL
+						c2 = Logs.colors.BLUE
+
+						Logs.info('%s- install %s%s%s (from %s)', c1, c2, tgt, c1, lbl)
 					return False
 
 		if not self.generator.bld.progress_bar:
-			Logs.info('+ install %s (from %s)', tgt, lbl)
+
+			c1 = Logs.colors.NORMAL
+			c2 = Logs.colors.BLUE
+
+			Logs.info('%s+ install %s%s%s (from %s)', c1, c2, tgt, c1, lbl)
 
 		# Give best attempt at making destination overwritable,
 		# like the 'install' utility used by 'make install' does.
@@ -1221,14 +1229,18 @@ class inst(Task.Task):
 		"""
 		if os.path.islink(tgt) and os.readlink(tgt) == src:
 			if not self.generator.bld.progress_bar:
-				Logs.info('- symlink %s (to %s)', tgt, src)
+				c1 = Logs.colors.NORMAL
+				c2 = Logs.colors.BLUE
+				Logs.info('%s- symlink %s%s%s (to %s)', c1, c2, tgt, c1, src)
 		else:
 			try:
 				os.remove(tgt)
 			except OSError:
 				pass
 			if not self.generator.bld.progress_bar:
-				Logs.info('+ symlink %s (to %s)', tgt, src)
+				c1 = Logs.colors.NORMAL
+				c2 = Logs.colors.BLUE
+				Logs.info('%s+ symlink %s%s%s (to %s)', c1, c2, tgt, c1, src)
 			os.symlink(src, tgt)
 			self.fix_perms(tgt)
 
@@ -1237,7 +1249,9 @@ class inst(Task.Task):
 		See :py:meth:`waflib.Build.inst.do_install`
 		"""
 		if not self.generator.bld.progress_bar:
-			Logs.info('- remove %s', tgt)
+			c1 = Logs.colors.NORMAL
+			c2 = Logs.colors.BLUE
+			Logs.info('%s- remove %s%s%s', c1, c2, tgt, c1)
 
 		#self.uninstall.append(tgt)
 		try:
@@ -1257,7 +1271,9 @@ class inst(Task.Task):
 		"""
 		try:
 			if not self.generator.bld.progress_bar:
-				Logs.info('- remove %s', tgt)
+				c1 = Logs.colors.NORMAL
+				c2 = Logs.colors.BLUE
+				Logs.info('%s- remove %s%s%s', c1, c2, tgt, c1)
 			os.remove(tgt)
 		except OSError:
 			pass

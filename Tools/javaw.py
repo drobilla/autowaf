@@ -212,6 +212,11 @@ def java_use_rec(self, name, **kw):
 		# is already guaranteed by ordering done between the single tasks
 		if hasattr(y, 'jar_task'):
 			self.use_lst.append(y.jar_task.outputs[0].abspath())
+		else:
+			if hasattr(y,'outdir'):
+				self.use_lst.append(y.outdir.abspath())
+			else:
+				self.use_lst.append(y.path.get_bld().abspath())
 
 	for x in self.to_list(getattr(y, 'use', [])):
 		self.java_use_rec(x)
@@ -230,16 +235,25 @@ def use_javac_files(self):
 	get = self.bld.get_tgen_by_name
 	for x in names:
 		try:
-			y = get(x)
+			tg = get(x)
 		except Errors.WafError:
 			self.uselib.append(x)
 		else:
-			y.post()
-			if hasattr(y, 'jar_task'):
-				self.use_lst.append(y.jar_task.outputs[0].abspath())
-				self.javac_task.set_run_after(y.jar_task)
+			tg.post()
+			if hasattr(tg, 'jar_task'):
+				self.use_lst.append(tg.jar_task.outputs[0].abspath())
+				self.javac_task.set_run_after(tg.jar_task)
+				self.javac_task.dep_nodes.extend(tg.jar_task.outputs)
 			else:
-				for tsk in y.tasks:
+				if hasattr(tg, 'outdir'):
+					base_node = tg.outdir
+				else:
+					base_node = tg.path.get_bld()
+
+				self.use_lst.append(base_node.abspath())
+				self.javac_task.dep_nodes.extend([x for x in base_node.ant_glob(JAR_RE, remove=False, quiet=True)])
+
+				for tsk in tg.tasks:
 					self.javac_task.set_run_after(tsk)
 
 		# If recurse use scan is enabled recursively add use attribute for each used one
@@ -471,7 +485,7 @@ def configure(self):
 		self.env.JAVA_HOME = [self.environ['JAVA_HOME']]
 
 	for x in 'javac java jar javadoc'.split():
-		self.find_program(x, var=x.upper(), path_list=java_path)
+		self.find_program(x, var=x.upper(), path_list=java_path, mandatory=(x not in ('javadoc')))
 
 	if 'CLASSPATH' in self.environ:
 		v.CLASSPATH = self.environ['CLASSPATH']
