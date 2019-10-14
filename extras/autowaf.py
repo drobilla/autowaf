@@ -78,6 +78,8 @@ def set_options(opt, debug_by_default=False):
                     help="use extremely strict compiler flags (likely noisy)")
     opts.add_option('--docs', action='store_true', default=False, dest='docs',
                     help="build documentation (requires doxygen)")
+    opts.add_option('-w', '--werror', action='store_true', dest='werror',
+                    help="Treat warnings as errors")
 
     # Test options
     if hasattr(Context.g_module, 'test'):
@@ -344,6 +346,12 @@ def configure(conf):
 
     if not conf.env['MSVC_COMPILER']:
         append_cxx_flags(['-fshow-column'])
+
+    if Options.options.werror:
+        if conf.env.MSVC_COMPILER:
+            append_cxx_flags('/WX')
+        else:
+            append_cxx_flags('-Werror')
 
     conf.env.NO_COVERAGE = True
     conf.env.BUILD_TESTS = False
