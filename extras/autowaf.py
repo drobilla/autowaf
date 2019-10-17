@@ -171,50 +171,42 @@ def define(conf, var_name, value):
     conf.define(var_name, value)
     conf.env[var_name] = value
 
-def check_pkg(conf, name, **args):
+def check_pkg(conf, spec, **kwargs):
     "Check for a package iff it hasn't been checked for yet"
-    if (args['uselib_store'].lower() in conf.env['AUTOWAF_LOCAL_LIBS'] or
-        args['uselib_store'].lower() in conf.env['AUTOWAF_LOCAL_HEADERS']):
+
+    if (kwargs['uselib_store'].lower() in conf.env['AUTOWAF_LOCAL_LIBS'] or
+        kwargs['uselib_store'].lower() in conf.env['AUTOWAF_LOCAL_HEADERS']):
         return
 
-    class CheckType:
-        OPTIONAL = 1
-        MANDATORY = 2
-
-    var_name = 'CHECKED_' + nameify(args['uselib_store'])
-    check = var_name not in conf.env
-    mandatory = 'mandatory' not in args or args['mandatory']
-    if not check and 'atleast_version' in args:
-        # Re-check if version is newer than previous check
-        checked_version = conf.env['VERSION_' + name]
-        if checked_version and checked_version < args['atleast_version']:
-            check = True
-    if not check and mandatory and conf.env[var_name] == CheckType.OPTIONAL:
-        # Re-check if previous check was optional but this one is mandatory
-        check = True
-    if check:
-        found = None
-        pkg_var_name = 'PKG_' + name.replace('-', '_')
-        pkg_name = name
-        if conf.env.PARDEBUG:
-            args['mandatory'] = False  # Smash mandatory arg
-            found = conf.check_cfg(package=pkg_name + 'D',
-                                   args="--cflags --libs", **args)
-            if found:
-                pkg_name += 'D'
-        if mandatory:
-            args['mandatory'] = True  # Unsmash mandatory arg
-        if not found:
-            found = conf.check_cfg(package=pkg_name, args="--cflags --libs",
-                                   **args)
-        if found:
-            conf.env[pkg_var_name] = pkg_name
-        if 'atleast_version' in args:
-            conf.env['VERSION_' + name] = args['atleast_version']
-    if mandatory:
-        conf.env[var_name] = CheckType.MANDATORY
+    import re
+    match = re.match('([^ ]*) >= [0-9\.]*', spec)
+    args = []
+    if match:
+        name = match.group(1)
+        args = [spec]
+    elif spec.find(' ') == -1:
+        name = spec
     else:
-        conf.env[var_name] = CheckType.OPTIONAL
+        Logs.error("Invalid package spec: %s" % spec)
+
+    found = None
+    pkg_var_name = 'PKG_' + name.replace('-', '_')
+    pkg_name = name
+    args += kwargs.get('args', [])
+
+    if conf.env.PARDEBUG:
+        kwargs['mandatory'] = False  # Smash mandatory arg
+        found = conf.check_cfg(package=pkg_name + 'D',
+                               args=args + ['--cflags', '--libs'])
+        if found:
+            pkg_name += 'D'
+
+        args['mandatory'] = mandatory  # Unsmash mandatory arg
+
+    if not found:
+        found = conf.check_cfg(package=spec,
+                               args=args + ['--cflags', '--libs'],
+                               **kwargs)
 
     if not conf.env.MSVC_COMPILER and 'system' in args and args['system']:
         conf.system_include_paths.update(
