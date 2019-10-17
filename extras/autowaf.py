@@ -128,6 +128,12 @@ class ConfigureContext(Configure.ConfigurationContext):
 
         super(ConfigureContext, self).store()
 
+    def check_pkg(self, *args, **kwargs):
+        return check_pkg(self, *args, **kwargs)
+
+    def check_function(self, *args, **kwargs):
+        return check_function(self, *args, **kwargs)
+
     def build_path(self, path='.'):
         """Return `path` within the build directory"""
         return str(self.path.get_bld().make_node(path))
