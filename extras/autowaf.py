@@ -167,10 +167,6 @@ def nameify(name):
     return (name.replace('/', '_').replace('++', 'PP')
             .replace('-', '_').replace('.', '_'))
 
-def define(conf, var_name, value):
-    conf.define(var_name, value)
-    conf.env[var_name] = value
-
 def check_pkg(conf, spec, **kwargs):
     "Check for a package iff it hasn't been checked for yet"
 
@@ -367,7 +363,8 @@ def configure(conf):
     appname = getattr(Context.g_module, Context.APPNAME, 'noname')
     version = getattr(Context.g_module, Context.VERSION, '0.0.0')
     defname = appname.upper().replace('-', '_').replace('.', '_')
-    define(conf, defname + '_VERSION', version)
+    conf.define(defname + '_VERSION', version)
+    conf.env[defname + '_VERSION'] = version
 
     conf.env.prepend_value('CFLAGS', '-I' + os.path.abspath('.'))
     conf.env.prepend_value('CXXFLAGS', '-I' + os.path.abspath('.'))
@@ -436,7 +433,8 @@ def set_modern_cxx_flags(conf, mandatory=False):
 
 def set_local_lib(conf, name, has_objects):
     var_name = 'HAVE_' + nameify(name.upper())
-    define(conf, var_name, 1)
+    conf.define(var_name, 1)
+    conf.env[var_name] = 1
     if has_objects:
         if type(conf.env['AUTOWAF_LOCAL_LIBS']) != dict:
             conf.env['AUTOWAF_LOCAL_LIBS'] = {}
