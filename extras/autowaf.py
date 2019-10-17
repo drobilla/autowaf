@@ -210,9 +210,9 @@ def check_pkg(conf, spec, **kwargs):
                                args=args + ['--cflags', '--libs'],
                                **kwargs)
 
-    if not conf.env.MSVC_COMPILER and 'system' in args and args['system']:
+    if not conf.env.MSVC_COMPILER and 'system' in kwargs and kwargs['system']:
         conf.system_include_paths.update(
-            conf.env['INCLUDES_' + nameify(args['uselib_store'])])
+            conf.env['INCLUDES_' + nameify(kwargs['uselib_store'])])
 
 def normpath(path):
     if sys.platform == 'win32':
