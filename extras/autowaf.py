@@ -924,7 +924,8 @@ class TestScope:
             self.tst.log_good('RUN     ', name)
 
         if Options.options.test_wrapper:
-            test = [Options.options.test_wrapper] + test
+            import shlex
+            test = shlex.split(Options.options.test_wrapper) + test
 
         output = TestOutput(expected)
         with open(os.devnull, 'wb') as null:
