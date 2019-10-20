@@ -1256,14 +1256,14 @@ def write_news(entries, out_file):
         news.write(' %s <%s>' % (entry['blamee_name'],
                                  entry['blamee_mbox'].replace('mailto:', '')))
 
-        news.write('  %s\n\n' % (
-            strftime('%a, %d %b %Y %H:%M:%S +0000', entry['date'])))
+        news.write('  %s\n' % (
+            entry['date'].strftime('%a, %d %b %Y %H:%M:%S %z')))
 
     news.close()
 
 def write_posts(entries, meta, out_dir, status='stable'):
-    "write news posts in Pelican Markdown format"
-    from time import strftime
+    "Write news posts in Pelican Markdown format"
+    import datetime
     try:
         os.mkdir(out_dir)
     except Exception:
@@ -1274,8 +1274,9 @@ def write_posts(entries, meta, out_dir, status='stable'):
         if entry['status'] != status:
             continue
 
-        date_str     = strftime('%Y-%m-%d', entry['date'])
-        datetime_str = strftime('%Y-%m-%d %H:%M', entry['date'])
+        date         = entry['date'].astimezone(datetime.timezone.utc)
+        date_str     = date.strftime('%Y-%m-%d')
+        datetime_str = date.strftime('%Y-%m-%d %H:%M')
 
         path  = os.path.join(out_dir, '%s-%s-%s.md' % (
             date_str, entry['name'], revision.replace('.', '-')))
@@ -1370,7 +1371,7 @@ def get_news(in_file, entry_props={}):
         # Read footer line
         foot    = f.readline()
         matches = re.compile(' -- (.*) <(.*)>  (.*)').match(foot)
-        entry['date']        = email.utils.parsedate(matches.group(3))
+        entry['date']        = email.utils.parsedate_to_datetime(matches.group(3))
         entry['blamee_name'] = matches.group(1)
         entry['blamee_mbox'] = matches.group(2)
         entry.update(entry_props)
