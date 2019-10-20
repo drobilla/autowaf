@@ -1247,9 +1247,12 @@ def write_news(entries, out_file):
     news = open(out_file, 'w')
     for r in revisions:
         entry = entries[r]
+        if r != revisions[0]:
+            news.write('\n')
+
         news.write('%s (%s) %s;\n' % (entry['name'], entry['revision'], entry['status']))
         for item in entry['items']:
-            wrapped = textwrap.wrap(item, width=79)
+            wrapped = textwrap.wrap(item, width=74)
             news.write('\n  * ' + '\n    '.join(wrapped))
 
         news.write('\n\n --')
