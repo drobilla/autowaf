@@ -654,7 +654,6 @@ def build_dox(bld, name, version, srcdir, blddir, outdir='', versioned=True):
                           bld.path.get_bld().ant_glob('doc/man/man%d/*' % i,
                                                       excl='**/_*'))
 
-
 def build_version_files(header_path, source_path, domain, major, minor, micro):
     """Generate version code header"""
     header_path = os.path.abspath(header_path)
@@ -1244,9 +1243,10 @@ def write_news(entries, out_file):
     if len(entries) == 0:
         return
 
+    revisions = sorted(entries.keys(), reverse=True)
     news = open(out_file, 'w')
-    for e in sorted(entries.keys(), reverse=True):
-        entry = entries[e]
+    for r in revisions:
+        entry = entries[r]
         news.write('%s (%s) %s;\n' % (entry['name'], entry['revision'], entry['status']))
         for item in entry['items']:
             wrapped = textwrap.wrap(item, width=79)
@@ -1269,9 +1269,8 @@ def write_posts(entries, meta, out_dir, status='stable'):
     except Exception:
         pass
 
-    for i in entries:
-        entry    = entries[i]
-        revision = i[1]
+    for r, entry in entries.items():
+        revision = entry['revision']
         if entry['status'] != status:
             continue
 
@@ -1375,7 +1374,9 @@ def get_news(in_file, entry_props={}):
         entry['blamee_name'] = matches.group(1)
         entry['blamee_mbox'] = matches.group(2)
         entry.update(entry_props)
-        entries[(entry['date'], entry['revision'])] = entry
+
+        key = tuple(map(int, entry['revision'].split('.')))
+        entries[key] = entry
 
         # Skip trailing blank line before next entry
         f.readline()
