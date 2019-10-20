@@ -865,7 +865,6 @@ class TestScope:
         if callable(test):
             output = self._run_callable(test, **kwargs)
         elif type(test) == list:
-
             output = self._run_command(test, **kwargs)
         else:
             raise Exception("Unknown test type")
