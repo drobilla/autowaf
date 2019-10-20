@@ -1264,6 +1264,9 @@ def write_news(entries, out_file):
 
     news.close()
 
+def get_items_markdown(items, indent=""):
+    return ''.join([indent + '* %s\n' % item for item in items])
+
 def write_posts(entries, meta, out_dir, status='stable'):
     "Write news posts in Pelican Markdown format"
     import datetime
@@ -1305,8 +1308,7 @@ def write_posts(entries, meta, out_dir, status='stable'):
             not (len(entry['items']) == 1 and
                  entry['items'][0] == 'Initial release')):
             post.write('\nChanges:\n\n')
-            for i in entry['items']:
-                post.write(' * %s\n' % i)
+            post.write(get_items_markdown(entry['items'], indent=" "))
 
         post.close()
 
