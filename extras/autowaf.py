@@ -1311,7 +1311,7 @@ def write_posts(entries, meta, out_dir, status='stable'):
         post.close()
 
 def get_blurb(in_file):
-    "Get the first paragram of a Markdown formatted file, skipping the title"
+    "Get the first paragraph of a Markdown formatted file, skipping the title"
     f = open(in_file, 'r')
     f.readline()  # Title
     f.readline()  # Title underline
