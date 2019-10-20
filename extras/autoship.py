@@ -468,6 +468,8 @@ def release(args, posts_dir=None, remote_dist_dir=None, dist_name=None):
     def run_cmd(cmd):
         if args.dry_run:
             print(" ".join([shlex.quote(i) for i in cmd]))
+        else:
+            subprocess.check_call(cmd)
 
     info = get_project_info()
     name = info["name"]
@@ -500,8 +502,8 @@ def release(args, posts_dir=None, remote_dist_dir=None, dist_name=None):
 
     # Check that working copy is clean
     branch_cmd = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
-    branch = subprocess.check_output(branch_cmd).decode('ascii').strip()
-    status_cmd = ["git", "status", "--porcelain", "-b", "--ignore-submodules"]
+    branch = subprocess.check_output(branch_cmd).decode("ascii").strip()
+    status_cmd = ["git", "status", "--porcelain", "-b"]
     status = subprocess.check_output(status_cmd).decode("utf-8")
     sys.stdout.write(status)
     expected_status = "## %s...origin/%s\n" % (branch, branch)
@@ -552,6 +554,7 @@ def release(args, posts_dir=None, remote_dist_dir=None, dist_name=None):
 
     report("Released %s %s" % (name, version))
     report("Remember to upload posts and push to other remotes!")
+
 
 def release_command():
     ap = argparse.ArgumentParser(description="Release project")
