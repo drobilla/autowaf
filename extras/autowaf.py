@@ -276,7 +276,6 @@ def configure(conf):
         Options.options.no_coverage = True
         append_cxx_flags(['/nologo',
                           '/FS',
-                          '/DNDEBUG',
                           '/D_CRT_SECURE_NO_WARNINGS',
                           '/experimental:external',
                           '/external:W0',
