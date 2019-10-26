@@ -80,13 +80,13 @@ def get_items_markdown(items, indent=""):
     return "".join([indent + "* %s\n" % item for item in items])
 
 
-def get_release_json(entry):
+def get_release_json(title, entry):
     """Return a release description in Gitlab JSON format"""
     import json
 
     version = entry["revision"]
     desc = {
-        "name": "Serd %s" % version,
+        "name": "%s %s" % (title, version),
         "tag_name": "v%s" % version,
         "description": get_items_markdown(entry["items"]),
         "released_at": entry["date"].isoformat(),
@@ -547,8 +547,8 @@ def release(args, posts_dir=None, remote_dist_dir=None, dist_name=None):
         "-XPOST",
         "-HContent-Type: application/json",
         "-HPRIVATE-TOKEN: " + args.token,
-        "-d" + get_release_json(entries[semver]),
-        "https://gitlab.com/api/v4/projects/drobilla%2Fserd/releases",
+        "-d" + get_release_json(title, entries[semver]),
+        "%s/releases" % url,
     ]
     run_cmd(post_cmd)
 
