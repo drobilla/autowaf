@@ -459,6 +459,20 @@ def posts_command():
     write_posts(entries, args.out_dir, meta)
 
 
+def json_command():
+    ap = argparse.ArgumentParser(description="Get release description in JSON")
+    ap.add_argument("version", help="Version number")
+    ap.add_argument("--in-path", default="NEWS", help="input file")
+    ap.add_argument("--in-format", default="NEWS", choices=["NEWS", "turtle"])
+
+    args = ap.parse_args(sys.argv[2:])
+    info = get_project_info()
+    semver = parse_version(args.version)
+    entries = read_news(args.in_path, args.in_format, info["dist_pattern"])
+
+    print(get_release_json(info["title"], entries[semver]))
+
+
 def release(args, posts_dir=None, remote_dist_dir=None, dist_name=None):
     import json
     import os
