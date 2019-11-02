@@ -371,7 +371,7 @@ def news_command():
 
     args = ap.parse_args(sys.argv[2:])
     entries = read_news(
-        args.in_path, args.in_format, args.unsorted, args.timezones
+        args.in_path, args.in_format, args.unsorted, not args.timezones
     )
 
     with open(args.out_path, "w") as news:
