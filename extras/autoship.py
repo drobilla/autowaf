@@ -473,6 +473,54 @@ def json_command():
     print(get_release_json(info["title"], entries[semver]))
 
 
+def post_lab_release(version, lab, group, token, dry_run=False):
+    import json
+    import shlex
+    import subprocess
+
+    def run_cmd(cmd):
+        if dry_run:
+            print(" ".join([shlex.quote(i) for i in cmd]))
+        else:
+            subprocess.check_call(cmd)
+
+    info = get_project_info()
+    name = info["name"]
+    title = info["title"]
+    semver = parse_version(version)
+    entries = read_news()
+    url = "https://%s/api/v4/projects/%s%%2F%s" % (lab, group, name)
+    dry_run = dry_run
+
+    # Check that this is a release version
+    ensure(is_release_version(semver), "%s is an unstable version" % version)
+
+    # Post Gitlab release
+    post_cmd = [
+        "curl",
+        "-XPOST",
+        "-HContent-Type: application/json",
+        "-HPRIVATE-TOKEN: " + token,
+        "-d" + get_release_json(title, entries[semver]),
+        "%s/releases" % url,
+    ]
+    run_cmd(post_cmd)
+
+    report("Posted Gitlab release %s %s" % (name, version))
+
+
+def post_lab_release_command():
+    ap = argparse.ArgumentParser(description="Post Gitlab release")
+    ap.add_argument("version", help="Version number")
+    ap.add_argument("group", help="Gitlab user or group for project")
+    ap.add_argument("token", help="Gitlab access token")
+    ap.add_argument("--lab", default="gitlab.com", help="Gitlab instance")
+    ap.add_argument("--dry-run", action="store_true", help="do nothing")
+    args = ap.parse_args(sys.argv[2:])
+
+    post_lab_release(args.version, args.lab, args.group, args.token, args.dry_run)
+
+
 def release(args, posts_dir=None, remote_dist_dir=None, dist_name=None):
     import json
     import os
@@ -556,15 +604,7 @@ def release(args, posts_dir=None, remote_dist_dir=None, dist_name=None):
         run_cmd(["scp", sig, os.path.join(remote_dist_dir, sig)])
 
     # Post Gitlab release
-    post_cmd = [
-        "curl",
-        "-XPOST",
-        "-HContent-Type: application/json",
-        "-HPRIVATE-TOKEN: " + args.token,
-        "-d" + get_release_json(title, entries[semver]),
-        "%s/releases" % url,
-    ]
-    run_cmd(post_cmd)
+    post_lab_release(version, args.lab, args.group, args.token, dry_run)
 
     report("Released %s %s" % (name, version))
     report("Remember to upload posts and push to other remotes!")
