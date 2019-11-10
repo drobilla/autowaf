@@ -979,17 +979,18 @@ class TestContext(Build.BuildContext):
         self.max_depth = max(self.max_depth, len(self.stack) - 1)
 
         bld_dir = node.get_bld().parent
-        if bld_dir != self.path.get_bld():
+
+        if hasattr(wscript_module, 'test'):
+            self.original_dir = os.getcwd()
+            Logs.info("Waf: Entering directory `%s'", bld_dir)
+            os.chdir(str(bld_dir))
+
+            if not self.env.NO_COVERAGE and str(node.parent) == Context.top_dir:
+                self.clear_coverage()
+
             Logs.info('')
+            self.log_good('=' * 10, 'Running %s tests\n', group_name)
 
-        self.original_dir = os.getcwd()
-        Logs.info("Waf: Entering directory `%s'\n", bld_dir)
-        os.chdir(str(bld_dir))
-
-        if not self.env.NO_COVERAGE and str(node.parent) == Context.top_dir:
-            self.clear_coverage()
-
-        self.log_good('=' * 10, 'Running %s tests', group_name)
         super(TestContext, self).pre_recurse(node)
 
     def test_result(self, success):
@@ -1010,9 +1011,12 @@ class TestContext(Build.BuildContext):
         duration = (bench_time() - self.start_time) * 1000.0
         is_top = str(node.parent) == str(Context.top_dir)
 
-        if is_top and self.max_depth > 1:
-            Logs.info('')
+        wscript_module = Context.load_module(node.abspath())
+        if not hasattr(wscript_module, 'test'):
+            os.chdir(self.original_dir)
+            return
 
+        Logs.info('')
         self.log_good('=' * 10, '%d tests from %s ran (%d ms total)',
                       scope.n_total, scope.name, duration)
 
@@ -1028,9 +1032,8 @@ class TestContext(Build.BuildContext):
         Logs.pprint('GREEN', '[  PASSED  ] %d tests' % successes)
         if scope.n_failed > 0:
             Logs.pprint('RED', '[  FAILED  ] %d tests' % scope.n_failed)
-        if is_top:
-            Logs.info("\nWaf: Leaving directory `%s'" % os.getcwd())
 
+        Logs.info("\nWaf: Leaving directory `%s'" % os.getcwd())
         os.chdir(self.original_dir)
 
     def execute(self):
