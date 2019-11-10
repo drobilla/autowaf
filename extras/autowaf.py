@@ -914,6 +914,8 @@ class TestScope:
               stdout=None,
               stderr=None,
               verbosity=1):
+        import tempfile
+
         def stream(s):
             return open(s, 'wb') if type(s) == str else s
 
@@ -927,10 +929,24 @@ class TestScope:
         output = TestOutput(expected)
         with open(os.devnull, 'wb') as null:
             out = null if verbosity < 3 and not stdout else stdout
-            err = null if verbosity < 2 and not stderr else stderr
+            tmp_err = None
+            if stderr or verbosity >= 2:
+                err = stderr
+            else:
+                tmp_err = tempfile.TemporaryFile()
+                err = tmp_err
+
             proc = subprocess.Popen(test, stdin=stdin, stdout=out, stderr=err)
             output.stdout, output.stderr = proc.communicate()
             output.result = proc.returncode
+
+            if tmp_err is not None:
+                if output.result != expected:
+                    tmp_err.seek(0)
+                    for line in tmp_err:
+                        sys.stderr.write(line.decode('utf-8'))
+
+                tmp_err.close()
 
         if output and verbosity > 0:
             self.tst.log_good('      OK', name)
