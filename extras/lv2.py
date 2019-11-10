@@ -1,8 +1,10 @@
 import os
+import re
 import sys
 
 from waflib import Logs
 from waflib import Options
+from waflib import TaskGen
 
 def options(opt):
     conf_opts = opt.get_option_group('Configuration options')
@@ -37,7 +39,7 @@ def default_lv2_path(conf):
         return ['~/.lv2',
                 '/usr/%s/lv2' % libdirname,
                 '/usr/local/%s/lv2' % libdirname]
-    
+
 def configure(conf):
     def env_path(parent_dir_var, name):
         parent = os.getenv(parent_dir_var)
@@ -73,3 +75,15 @@ def configure(conf):
     # Add default LV2_PATH to runtime environment for tests that use plugins
     if 'LV2_PATH' not in os.environ:
         conf.run_env['LV2_PATH'] = default_lv2_path(conf)
+
+    # Define dynamically loadable module pattern and extension
+    lib_pat = re.sub('^lib', '', conf.env.cshlib_PATTERN)
+    conf.env['LV2_LIB_PATTERN'] = lib_pat
+    conf.env['LV2_LIB_EXT'] = lib_pat[lib_pat.rfind('.'):]
+
+@TaskGen.feature('lv2lib')
+@TaskGen.before_method('apply_link', 'propagate_uselib_vars')
+def build_lv2_lib(self):
+    """Change library pattern to build a module without the "lib" prefix"""
+    self.env.cshlib_PATTERN = self.env.LV2_LIB_PATTERN
+    self.env.cxxshlib_PATTERN = self.env.LV2_LIB_PATTERN
