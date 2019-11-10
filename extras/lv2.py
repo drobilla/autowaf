@@ -73,9 +73,15 @@ def configure(conf):
             conf.env['LV2DIR'] = os.path.join(conf.env['LIBDIR'], 'lv2')
 
     # Define dynamically loadable module pattern and extension
-    lib_pat = re.sub('^lib', '', conf.env.cshlib_PATTERN)
-    conf.env['LV2_LIB_PATTERN'] = lib_pat
-    conf.env['LV2_LIB_EXT'] = lib_pat[lib_pat.rfind('.'):]
+    lib_pat = None
+    if 'cshlib_PATTERN' in conf.env:
+        lib_pat = re.sub('^lib', '', conf.env.cshlib_PATTERN)
+    elif 'cxxshlib_PATTERN' in conf.env:
+        lib_pat = re.sub('^lib', '', conf.env.cxxshlib_PATTERN)
+
+    if lib_pat is not None:
+        conf.env['LV2_LIB_PATTERN'] = lib_pat
+        conf.env['LV2_LIB_EXT'] = lib_pat[lib_pat.rfind('.'):]
 
 @TaskGen.feature('lv2lib')
 @TaskGen.before_method('apply_link', 'propagate_uselib_vars')
