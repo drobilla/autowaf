@@ -72,10 +72,6 @@ def configure(conf):
         else:
             conf.env['LV2DIR'] = os.path.join(conf.env['LIBDIR'], 'lv2')
 
-    # Add default LV2_PATH to runtime environment for tests that use plugins
-    if 'LV2_PATH' not in os.environ:
-        conf.run_env['LV2_PATH'] = default_lv2_path(conf)
-
     # Define dynamically loadable module pattern and extension
     lib_pat = re.sub('^lib', '', conf.env.cshlib_PATTERN)
     conf.env['LV2_LIB_PATTERN'] = lib_pat
