@@ -474,7 +474,6 @@ def json_command():
 
 
 def post_lab_release(version, lab, group, token, dry_run=False):
-    import json
     import shlex
     import subprocess
 
