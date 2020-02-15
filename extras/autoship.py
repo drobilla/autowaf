@@ -385,13 +385,14 @@ def ttl_news_command():
     ap.add_argument("--template")
     ap.add_argument("--unsorted", action="store_true", help="don't sort items")
     ap.add_argument("--in-format", default="NEWS", choices=["NEWS", "turtle"])
+    ap.add_argument("--uri", help="project URI")
 
     args = ap.parse_args(sys.argv[2:])
-    info = get_project_info()
     entries = read_news(args.in_path, args.in_format, args.unsorted, True)
 
+    uri = args.uri if args.uri else get_project_info()["uri"]
     write_ttl_news(
-        entries, args.out_path, template=args.template, subject_uri=info["uri"]
+        entries, args.out_path, template=args.template, subject_uri=uri
     )
 
 
