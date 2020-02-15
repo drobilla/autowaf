@@ -294,7 +294,7 @@ def write_ttl_news(entries, out_file, template=None, subject_uri=None):
 
     for r, e in entries.items():
         semver = parse_version(e["revision"])
-        ver_string = "%03d%03d%03d" % semver
+        ver_string = ("%03d" * len(semver)) % semver
 
         release = rdflib.BNode("r%s" % ver_string)
         g.add((subject, doap.release, release))
