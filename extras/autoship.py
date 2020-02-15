@@ -292,7 +292,9 @@ def write_ttl_news(entries, out_file, template=None, subject_uri=None):
 
     maintainer = g.value(subject, doap.maintainer, None)
 
-    for r, e in entries.items():
+    revisions = sorted(entries.keys(), reverse=True)
+    for r in revisions:
+        e = entries[r]
         semver = parse_version(e["revision"])
         ver_string = ("%03d" * len(semver)) % semver
 
