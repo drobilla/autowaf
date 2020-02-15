@@ -388,7 +388,7 @@ def ttl_news_command():
 
     args = ap.parse_args(sys.argv[2:])
     info = get_project_info()
-    entries = read_news(args.in_path, args.in_format, info["dist_pattern"])
+    entries = read_news(args.in_path, args.in_format, args.unsorted, True)
 
     write_ttl_news(
         entries, args.out_path, template=args.template, subject_uri=info["uri"]
@@ -452,8 +452,7 @@ def posts_command():
     ap.add_argument("--title", help="Title for posts")
 
     args = ap.parse_args(sys.argv[2:])
-    info = get_project_info()
-    entries = read_news(args.in_path, args.in_format, info["dist_pattern"])
+    entries = read_news(args.in_path, args.in_format)
     meta = {"Author": args.author} if args.author else {}
 
     write_posts(entries, args.out_dir, meta)
@@ -468,7 +467,7 @@ def json_command():
     args = ap.parse_args(sys.argv[2:])
     info = get_project_info()
     semver = parse_version(args.version)
-    entries = read_news(args.in_path, args.in_format, info["dist_pattern"])
+    entries = read_news(args.in_path, args.in_format)
 
     print(get_release_json(info["title"], entries[semver]))
 
