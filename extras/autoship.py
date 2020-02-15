@@ -34,16 +34,24 @@ def get_project_info(top=None):
     loader = importlib.machinery.SourceFileLoader("wscript", wscript_path)
     spec = importlib.util.spec_from_loader("wscript", loader)
     wscript = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(wscript)
 
-    return {
-        "name": wscript.APPNAME,
-        "version": wscript.VERSION,
-        "uri": getattr(wscript, "uri", None),
-        "title": getattr(wscript, "title", wscript.APPNAME.title()),
-        "dist_pattern": wscript.dist_pattern,
-        "post_tags": wscript.post_tags,
-    }
+    try:
+        spec.loader.exec_module(wscript)
+
+        info = {"name": wscript.APPNAME, "version": wscript.VERSION}
+
+        for key in ["uri", "title", "dist_pattern", "post_tags"]:
+            value = getattr(wscript, key, None)
+            if value is not None:
+                info[key] = value
+
+        if "title" not in info:
+            info["title"] = wscript.APPNAME.title()
+
+        return info
+
+    except Exception:
+        return {}
 
 
 def parse_version(revision):
