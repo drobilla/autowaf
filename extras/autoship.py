@@ -200,7 +200,6 @@ def write_text_news(entries, news):
 def read_ttl_news(name, in_files, top_entries=None, dist_pattern=None):
     """Read news entries from Turtle"""
 
-    import datetime
     import rdflib
 
     doap = rdflib.Namespace("http://usefulinc.com/ns/doap#")
@@ -218,6 +217,13 @@ def read_ttl_news(name, in_files, top_entries=None, dist_pattern=None):
     for f in g.triples([proj, rdfs.seeAlso, None]):
         if f[2].endswith(".ttl"):
             g.parse(f[2], format="turtle")
+
+    def parse_datetime(date):
+        import datetime
+        try:
+            return datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S%z")
+        except Exception:
+            return datetime.datetime.strptime(date, "%Y-%m-%d")
 
     entries = {}
     for r in g.triples([proj, doap.release, None]):
@@ -237,7 +243,8 @@ def read_ttl_news(name, in_files, top_entries=None, dist_pattern=None):
 
         if revision and date and blamee and changeset:
             status = "stable" if is_release_version(revision) else "unstable"
-            iso_date = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S%z")
+            iso_date = parse_datetime(date)
+
             e = {
                 "name": name,
                 "revision": str(revision),
