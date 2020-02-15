@@ -107,7 +107,7 @@ def read_text_news(in_file, preserve_timezones=False, dist_pattern=None):
         while True:
             # Read header line
             head = f.readline()
-            matches = re.match(r"([^ ]*) \((.*)\) ([a-zA-z]*)", head)
+            matches = re.match(r"([^(]*) \(([0-9.]*)\) ([a-zA-z]*)", head)
             if matches is None:
                 break
 
