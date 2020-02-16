@@ -12,14 +12,9 @@ def warn(msg):
     sys.stderr.write("warning: %s\n" % msg)
 
 
-def error_exit(msg):
-    sys.stderr.write("error: %s\n" % msg)
-    sys.exit(1)
-
-
 def ensure(condition, message):
     if not condition:
-        error_exit(message)
+        raise Exception(message)
 
 
 def get_project_info(top=None):
