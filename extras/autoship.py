@@ -300,6 +300,11 @@ def write_ttl_news(entries, out_file, template=None, subject_uri=None):
         subject = g.value(None, rdf.type, doap.Project)
         ensure(subject is not None, "Unable to find project URI for subject")
 
+    # Get doap:name from first NEWS entry if it is not already present
+    if g.value(subject, doap.name, None) is None:
+        first_entry = next(iter(entries.values()))
+        g.add((subject, doap.name, rdflib.Literal(first_entry["name"])))
+
     # Get maintainer
     maintainer = g.value(subject, doap.maintainer, None)
     if not maintainer:
