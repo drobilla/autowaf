@@ -215,6 +215,7 @@ def read_ttl_news(name, in_files, dist_pattern=None):
 
     def parse_datetime(date):
         import datetime
+
         try:
             return datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S%z")
         except Exception:
@@ -533,7 +534,9 @@ def post_lab_release_command():
     ap.add_argument("--dry-run", action="store_true", help="do nothing")
     args = ap.parse_args(sys.argv[2:])
 
-    post_lab_release(args.version, args.lab, args.group, args.token, args.dry_run)
+    post_lab_release(
+        args.version, args.lab, args.group, args.token, args.dry_run
+    )
 
 
 def release(args, posts_dir=None, remote_dist_dir=None, dist_name=None):
