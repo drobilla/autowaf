@@ -296,11 +296,14 @@ def write_ttl_news(entries, out_file, template=None, subject_uri=None):
         subject = rdflib.URIRef(subject_uri)
         g.add((subject, rdf.type, doap.Project))
     else:
-        # Find project URI to use as subject, and optionally the maintainer
+        # Find project URI to use as subject
         subject = g.value(None, rdf.type, doap.Project)
         ensure(subject is not None, "Unable to find project URI for subject")
 
+    # Get maintainer
     maintainer = g.value(subject, doap.maintainer, None)
+    if not maintainer:
+        maintainer = g.value(subject, doap.developer, None)
 
     revisions = sorted(entries.keys(), reverse=True)
     for r in revisions:
