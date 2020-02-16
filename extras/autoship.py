@@ -192,7 +192,7 @@ def write_text_news(entries, news):
         news.write("\n\n -- %s  %s\n" % (author, date))
 
 
-def read_ttl_news(name, in_files, top_entries=None, dist_pattern=None):
+def read_ttl_news(name, in_files, dist_pattern=None):
     """Read news entries from Turtle"""
 
     import rdflib
@@ -254,10 +254,6 @@ def read_ttl_news(name, in_files, top_entries=None, dist_pattern=None):
             for i in g.triples([changeset, dcs.item, None]):
                 item = str(g.value(i[2], rdfs.label, None))
                 e["items"] += [item]
-                if dist and top_entries is not None:
-                    if dist not in top_entries:
-                        top_entries[dist] = {"items": []}
-                    top_entries[dist]["items"] += ["%s: %s" % (name, item)]
 
             e["blamee_name"] = str(g.value(blamee, foaf.name, None))
             e["blamee_mbox"] = str(g.value(blamee, foaf.mbox, None))
