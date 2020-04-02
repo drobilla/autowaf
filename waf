@@ -19,7 +19,7 @@ except Exception as e:
 
 def main():
     script_path = os.path.abspath(inspect.getfile(inspect.getmodule(main)))
-    project_path = os.path.dirname(script_path)
+    project_path = os.path.dirname(os.path.realpath(script_path))
     Scripting.waf_entry_point(os.getcwd(), Context.WAFVERSION, project_path)
 
 
