@@ -351,7 +351,7 @@ def configure(conf):
     try:
         conf.env.BUILD_TESTS = Options.options.build_tests
         conf.env.NO_COVERAGE = Options.options.no_coverage
-        if not Options.options.no_coverage:
+        if conf.env.BUILD_TESTS and not Options.options.no_coverage:
             # Set up unit test code coverage
             if conf.is_defined('CLANG'):
                 for cov in [conf.env.CC[0].replace('clang', 'llvm-cov'),
