@@ -723,6 +723,10 @@ def libname_msvc(self, libname, is_static=False):
 		_libpaths = self.env.LIBPATH
 
 	static_libs=[
+		'lib%ss.a' % lib,
+		'lib%s.a' % lib,
+		'%ss.a' % lib,
+		'%s.a' %lib,
 		'lib%ss.lib' % lib,
 		'lib%s.lib' % lib,
 		'%ss.lib' % lib,
@@ -922,7 +926,7 @@ def msvc_common_flags(conf):
 
 	v.LIB_ST            = '%s.lib'
 	v.LIBPATH_ST        = '/LIBPATH:%s'
-	v.STLIB_ST          = '%s.lib'
+	v.STLIB_ST          = '%s.a'
 	v.STLIBPATH_ST      = '/LIBPATH:%s'
 
 	if v.MSVC_MANIFEST:
@@ -936,7 +940,7 @@ def msvc_common_flags(conf):
 	v.IMPLIB_ST         = '/IMPLIB:%s'
 
 	v.LINKFLAGS_cstlib  = []
-	v.cstlib_PATTERN    = v.cxxstlib_PATTERN = '%s.lib'
+	v.cstlib_PATTERN    = v.cxxstlib_PATTERN = '%s.a'
 
 	v.cprogram_PATTERN  = v.cxxprogram_PATTERN = '%s.exe'
 
