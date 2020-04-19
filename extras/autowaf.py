@@ -470,12 +470,13 @@ def set_lib_env(conf,
                 version,
                 has_objects=True,
                 include_path=None,
-                lib_path=None):
+                lib_path=None,
+                lib=None):
     "Set up environment for local library as if found via pkg-config."
     NAME         = name.upper()
     major_ver    = version.split('.')[0]
     pkg_var_name = 'PKG_' + name.replace('-', '_') + '_' + major_ver
-    lib_name     = '%s-%s' % (name, major_ver)
+    lib_name     = '%s-%s' % (lib if lib is not None else name, major_ver)
 
     if lib_path is None:
         lib_path = str(conf.path.get_bld())
