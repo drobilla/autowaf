@@ -422,8 +422,9 @@ def write_posts(entries, out_dir, meta={}):
     info = get_project_info()
     description = get_blurb("README.md")
     title = info["title"]
-    meta["Tags"] = ", ".join(info["post_tags"])
     meta["Author"] = meta.get("Author", os.getenv("USER"))
+    if info["post_tags"]:
+        meta["Tags"] = ", ".join(info["post_tags"])
 
     try:
         os.mkdir(out_dir)
