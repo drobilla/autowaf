@@ -160,10 +160,20 @@ def check_function(conf, lang, name, **args):
     "Check for a function"
     header_names = Utils.to_list(args['header_name'])
     includes = ''.join(['#include <%s>\n' % x for x in header_names])
+    return_type = args['return_type'] if 'return_type' in args else 'int'
+    arg_types = args['arg_types'] if 'arg_types' in args else ''
+
     fragment = '''
 %s
-int main() { return !(void(*)())(%s); }
-''' % (includes, name)
+
+typedef %s (*Func)(%s);
+
+int main(void) {
+	static const Func ptr = %s;
+    (void)ptr;
+	return 0;
+}
+''' % (includes, return_type, arg_types, name)
 
     check_func  = get_check_func(conf, lang)
     args['msg'] = 'Checking for %s' % name
