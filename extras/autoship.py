@@ -21,6 +21,8 @@ def get_project_info(top=None):
     """Load wscript to get project information (name, version, and so on)"""
 
     import importlib
+    import importlib.machinery
+    import importlib.util
 
     project_dir = top or os.getcwd()
     wscript_path = os.path.join(project_dir, "wscript")
