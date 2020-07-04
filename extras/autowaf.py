@@ -87,8 +87,8 @@ def set_options(opt, debug_by_default=False):
     # Test options
     if hasattr(Context.g_module, 'test'):
         test_opts = opt.add_option_group('Test options', '')
-        opts.add_option('-T', '--test', action='store_true', dest='build_tests',
-                        help='build unit tests')
+        opts.add_option('-T', '--test', action='store_true',
+                        dest='build_tests', help='build unit tests')
         opts.add_option('--no-coverage', action='store_true',
                         dest='no_coverage',
                         help='do not instrument code for test coverage')
@@ -194,8 +194,11 @@ def nameify(name):
 def check_pkg(conf, spec, **kwargs):
     "Check for a package iff it hasn't been checked for yet"
 
-    if (kwargs['uselib_store'].lower() in conf.env['AUTOWAF_LOCAL_LIBS'] or
-        kwargs['uselib_store'].lower() in conf.env['AUTOWAF_LOCAL_HEADERS']):
+    uselib_store = kwargs['uselib_store']
+    is_local = (uselib_store.lower() in conf.env['AUTOWAF_LOCAL_LIBS'] or
+                uselib_store.lower() in conf.env['AUTOWAF_LOCAL_HEADERS'])
+
+    if is_local:
         return
 
     import re
@@ -230,7 +233,7 @@ def check_pkg(conf, spec, **kwargs):
 
     if not conf.env.MSVC_COMPILER and 'system' in kwargs and kwargs['system']:
         conf.system_include_paths.update(
-            conf.env['INCLUDES_' + nameify(kwargs['uselib_store'])])
+            conf.env['INCLUDES_' + nameify(uselib_store)])
 
 
 def normpath(path):
@@ -1051,7 +1054,8 @@ class TestContext(Build.BuildContext):
             Logs.info("Waf: Entering directory `%s'", bld_dir)
             os.chdir(str(bld_dir))
 
-            if not self.env.NO_COVERAGE and str(node.parent) == Context.top_dir:
+            parent_is_top = str(node.parent) == Context.top_dir
+            if not self.env.NO_COVERAGE and parent_is_top:
                 self.clear_coverage()
 
             Logs.info('')
@@ -1172,8 +1176,9 @@ class TestContext(Build.BuildContext):
             lines = re.search('lines\.*: (.*)%.*', summary).group(1)
             functions = re.search('functions\.*: (.*)%.*', summary).group(1)
             branches = re.search('branches\.*: (.*)%.*', summary).group(1)
-            self.log_good('COVERAGE', '%s%% lines, %s%% functions, %s%% branches',
-                          lines, functions, branches)
+            self.log_good(
+                'COVERAGE', '%s%% lines, %s%% functions, %s%% branches',
+                lines, functions, branches)
 
         except Exception:
             Logs.warn('Failed to run lcov to generate coverage report')
