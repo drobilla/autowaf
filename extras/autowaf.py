@@ -142,6 +142,32 @@ class ConfigureContext(Configure.ConfigurationContext):
         """Return `path` within the build directory"""
         return str(self.path.get_bld().make_node(path))
 
+    def add_compiler_flags(self, lang, compiler_to_flags):
+        """Add compiler-specific flags, for example to suppress warnings.
+
+        The lang argument must be "c", "cxx", or "*" for both.
+
+        The compiler_to_flags argument must be a map from compiler name
+        ("clang", "gcc", or "msvc") to a list of command line flags.
+        """
+
+        if lang == "*":
+            self.add_compiler_flags('c', compiler_to_flags)
+            self.add_compiler_flags('cxx', compiler_to_flags)
+        else:
+            if lang == 'c':
+                compiler_name = self.env.CC_NAME
+            elif lang == 'cxx':
+                compiler_name = self.env.CXX_NAME
+            else:
+                raise Exception('Unknown language "%s"' % lang)
+
+            var_name = lang.upper() + 'FLAGS'
+            for name, flags in compiler_to_flags.items():
+                if name in compiler_name:
+                    self.env.append_value(var_name, flags)
+
+
 def get_check_func(conf, lang):
     if lang == 'c':
         return conf.check_cc
@@ -241,6 +267,189 @@ def normpath(path):
     else:
         return os.path.normpath(path)
 
+
+# GCC warnings common to C and C++
+gcc_common_warnings = [
+  # '-Waggregate-return',
+  '-Waggressive-loop-optimizations',
+  '-Wall',
+  '-Walloc-zero',
+  '-Walloca',
+  # '-Walloca-larger-than=',
+  '-Wattribute-alias',
+  '-Wattributes',
+  '-Wbuiltin-declaration-mismatch',
+  '-Wbuiltin-macro-redefined',
+  '-Wcast-align',
+  '-Wcast-align=strict',
+  '-Wcast-qual',
+  '-Wconversion',
+  '-Wcoverage-mismatch',
+  '-Wcpp',
+  '-Wdate-time',
+  '-Wdeprecated',
+  '-Wdeprecated-declarations',
+  '-Wdisabled-optimization',
+  '-Wdiv-by-zero',
+  '-Wdouble-promotion',
+  '-Wduplicated-branches',
+  '-Wduplicated-cond',
+  '-Wextra',
+  '-Wfloat-equal',
+  '-Wformat-signedness',
+  '-Wnormalized',
+  # '-Wframe-larger-than=',
+  '-Wfree-nonheap-object',
+  '-Whsa',
+  '-Wif-not-aligned',
+  '-Wignored-attributes',
+  '-Winline',
+  '-Wint-to-pointer-cast',
+  '-Winvalid-memory-model',
+  '-Winvalid-pch',
+  # '-Wlarger-than=',
+  '-Wlogical-op',
+  '-Wlto-type-mismatch',
+  '-Wmissing-declarations',
+  '-Wmissing-include-dirs',
+  '-Wmultichar',
+  '-Wnull-dereference',
+  '-Wodr',
+  '-Woverflow',
+  '-Wpacked',
+  '-Wpacked-bitfield-compat',
+  '-Wpadded',
+  '-Wpedantic',
+  '-Wpointer-compare',
+  '-Wpragmas',
+  '-Wredundant-decls',
+  '-Wreturn-local-addr',
+  '-Wscalar-storage-order',
+  '-Wshadow',
+  '-Wshift-count-negative',
+  '-Wshift-count-overflow',
+  '-Wshift-negative-value',
+  '-Wshift-overflow=2',
+  '-Wsizeof-array-argument',
+  '-Wstack-protector',
+  # '-Wstack-usage=',
+  '-Wstrict-aliasing',
+  '-Wstrict-overflow',
+  '-Wsuggest-attribute=cold',
+  '-Wsuggest-attribute=const',
+  '-Wsuggest-attribute=format',
+  '-Wsuggest-attribute=malloc',
+  '-Wsuggest-attribute=noreturn',
+  '-Wsuggest-attribute=pure',
+  '-Wswitch-bool',
+  '-Wnormalized',
+  '-Wswitch-default',
+  '-Wswitch-enum',
+  '-Wswitch-unreachable',
+  '-Wsync-nand',
+  # '-Wsystem-headers',
+  '-Wtrampolines',
+  '-Wundef',
+  '-Wunused-macros',
+  '-Wunused-result',
+  '-Wvarargs',
+  '-Wvector-operation-performance',
+  '-Wvla',
+  # '-Wvla-larger-than=',
+  '-Wwrite-strings',
+]
+
+gcc_c_warnings = [
+  '-Wbad-function-cast',
+  '-Wc++-compat',
+  # '-Wc90-c99-compat',
+  '-Wc99-c11-compat',
+  # '-Wdeclaration-after-statement',
+  '-Wdesignated-init',
+  '-Wdiscarded-array-qualifiers',
+  '-Wdiscarded-qualifiers',
+  '-Wincompatible-pointer-types',
+  '-Wint-conversion',
+  '-Wjump-misses-init',
+  '-Wmissing-prototypes',
+  '-Wnested-externs',
+  '-Wold-style-definition',
+  '-Woverride-init-side-effects',
+  '-Wpointer-to-int-cast',
+  '-Wstrict-prototypes',
+  # '-Wtraditional',
+  # '-Wtraditional-conversion',
+  # '-Wunsuffixed-float-constants',
+]
+
+gcc_cxx_warnings = [
+  '-Wconditionally-supported',
+  '-Wconversion-null',
+  '-Wctor-dtor-privacy',
+  '-Wdelete-incomplete',
+  '-Weffc++',
+  '-Wextra-semi',
+  '-Winherited-variadic-ctor',
+  '-Winvalid-offsetof',
+  '-Wliteral-suffix',
+  '-Wmultiple-inheritance',
+  # '-Wnamespaces',
+  '-Wnoexcept',
+  '-Wnon-template-friend',
+  '-Wnon-virtual-dtor',
+  '-Wold-style-cast',
+  '-Woverloaded-virtual',
+  '-Wplacement-new=2',
+  '-Wpmf-conversions',
+  '-Wregister',
+  '-Wsign-promo',
+  '-Wstrict-null-sentinel',
+  '-Wsubobject-linkage',
+  '-Wsuggest-final-methods',
+  '-Wsuggest-final-types',
+  '-Wsuggest-override',
+  '-Wsynth',
+  # '-Wtemplates',
+  '-Wterminate',
+  '-Wuseless-cast',
+  '-Wvirtual-inheritance',
+  '-Wvirtual-move-assign',
+  '-Wzero-as-null-pointer-constant',
+]
+
+
+def remove_all_warning_flags(conf):
+    """Removes all warning flags except Werror or equivalent"""
+    if 'clang' in conf.env.CC_NAME or 'gcc' in conf.env.CC_NAME:
+        for var in ['CFLAGS', 'CXXFLAGS']:
+            flags = conf.env[var]
+            conf.env[var] = [f for f in flags
+                             if not (f.startswith('-W') and f != '-Werror')]
+    elif 'msvc' in conf.env.CC_NAME:
+        for var in ['CFLAGS', 'CXXFLAGS']:
+            flags = conf.env[var]
+            conf.env[var] = [f for f in flags
+                             if not (f.startswith('/W') and f != '/WX')]
+
+
+def enable_all_warnings(conf):
+    """Enables all known warnings"""
+    if 'clang' in conf.env.CC_NAME:
+        conf.env.append_unique('CFLAGS', ['-Weverything'])
+        conf.env.append_unique('CXXFLAGS', ['-Weverything'])
+    elif 'gcc' in conf.env.CC_NAME:
+        conf.env.append_unique('CFLAGS', gcc_common_warnings)
+        conf.env.append_unique('CXXFLAGS', gcc_common_warnings)
+        conf.env.append_unique('CFLAGS', gcc_c_warnings)
+        conf.env.append_unique('CXXFLAGS', gcc_cxx_warnings)
+    elif conf.env.MSVC_COMPILER:
+        conf.env.append_unique('CFLAGS', ['/Wall'])
+        conf.env.append_unique('CXXFLAGS', ['/Wall'])
+    else:
+        Logs.warn('Unknown compiler "%s", not enabling warnings'
+                  % conf.env.CC_NAME)
+
+
 def configure(conf):
     def append_cxx_flags(flags):
         conf.env.append_value('CFLAGS', flags)
@@ -293,6 +502,11 @@ def configure(conf):
         else:
             append_cxx_flags(['-DNDEBUG'])
 
+    if Options.options.ultra_strict:
+        Options.options.strict = True
+        remove_all_warning_flags(conf)
+        enable_all_warnings(conf)
+
     if conf.env.MSVC_COMPILER:
         Options.options.no_coverage = True
         append_cxx_flags(['/nologo',
@@ -301,49 +515,13 @@ def configure(conf):
                           '/experimental:external',
                           '/external:W0',
                           '/external:anglebrackets'])
+        conf.env.append_unique('CXXFLAGS', ['/EHsc'])
         conf.env.append_value('LINKFLAGS', '/nologo')
-        if Options.options.strict or Options.options.ultra_strict:
-            ms_strict_flags = ['/Wall',
-                               '/wd4061',
-                               '/wd4200',
-                               '/wd4514',
-                               '/wd4571',
-                               '/wd4625',
-                               '/wd4626',
-                               '/wd4706',
-                               '/wd4710',
-                               '/wd4820',
-                               '/wd5026',
-                               '/wd5027',
-                               '/wd5045']
-            conf.env.append_value('CFLAGS', ms_strict_flags)
-            conf.env.append_value('CXXFLAGS', ms_strict_flags)
-            conf.env.append_value('CXXFLAGS', ['/EHsc'])
-    else:
-        if Options.options.ultra_strict:
-            Options.options.strict = True
-            conf.env.append_value('CFLAGS', ['-Wredundant-decls',
-                                             '-Wstrict-prototypes',
-                                             '-Wmissing-prototypes',
-                                             '-Wcast-qual'])
-            conf.env.append_value('CXXFLAGS', ['-Wcast-qual'])
-
-        if Options.options.strict:
-            conf.env.append_value('CFLAGS', ['-pedantic', '-Wshadow'])
-            if conf.env.DEST_OS != "darwin":
-                conf.env.append_value('LINKFLAGS', ['-Wl,--no-undefined'])
-            conf.env.append_value('CXXFLAGS', ['-Wnon-virtual-dtor',
-                                               '-Woverloaded-virtual'])
-            append_cxx_flags(['-Wall',
-                              '-Wcast-align',
-                              '-Wextra',
-                              '-Wmissing-declarations',
-                              '-Wno-unused-parameter',
-                              '-Wno-parentheses',
-                              '-Wstrict-overflow',
-                              '-Wundef',
-                              '-Wwrite-strings',
-                              '-fstrict-overflow'])
+    elif Options.options.strict:
+        if conf.env.DEST_OS != "darwin":
+            conf.env.append_value('LINKFLAGS', ['-Wl,--no-undefined'])
+            conf.env.append_value('CFLAGS', ['-fstrict-overflow'])
+            conf.env.append_value('CXXFLAGS', ['-fstrict-overflow'])
 
             # Add less universal flags after checking they work
             extra_flags = ['-Wlogical-op',
