@@ -20,10 +20,12 @@ else:
 # import preproc
 # preproc.go_absolute = True
 
+
 @feature('c', 'cxx')
 @after('apply_incpaths')
 def include_config_h(self):
     self.env.append_value('INCPATHS', self.bld.bldnode.abspath())
+
 
 class OptionsContext(Options.OptionsContext):
     def __init__(self, **kwargs):
@@ -38,6 +40,7 @@ class OptionsContext(Options.OptionsContext):
         for name, desc in flags.items():
             group.add_option('--' + name, action='store_true',
                              dest=name.replace('-', '_'), help=desc)
+
 
 def set_options(opt, debug_by_default=False):
     "Add standard autowaf options"
@@ -101,6 +104,7 @@ def set_options(opt, debug_by_default=False):
     run_opts.add_option('--cmd', type='string', dest='cmd',
                         help='command to run from build directory')
 
+
 class ConfigureContext(Configure.ConfigurationContext):
     """configures the project"""
 
@@ -146,6 +150,7 @@ def get_check_func(conf, lang):
     else:
         Logs.error("Unknown header language `%s'" % lang)
 
+
 def check_header(conf, lang, name, define='', mandatory=True):
     "Check for a header"
     check_func = get_check_func(conf, lang)
@@ -155,6 +160,7 @@ def check_header(conf, lang, name, define='', mandatory=True):
                    mandatory=mandatory)
     else:
         check_func(header_name=name, mandatory=mandatory)
+
 
 def check_function(conf, lang, name, **args):
     "Check for a function"
@@ -179,9 +185,11 @@ int main(void) {
     args['msg'] = 'Checking for %s' % name
     check_func(fragment=fragment, **args)
 
+
 def nameify(name):
     return (name.replace('/', '_').replace('++', 'PP')
             .replace('-', '_').replace('.', '_'))
+
 
 def check_pkg(conf, spec, **kwargs):
     "Check for a package iff it hasn't been checked for yet"
@@ -223,6 +231,7 @@ def check_pkg(conf, spec, **kwargs):
     if not conf.env.MSVC_COMPILER and 'system' in kwargs and kwargs['system']:
         conf.system_include_paths.update(
             conf.env['INCLUDES_' + nameify(kwargs['uselib_store'])])
+
 
 def normpath(path):
     if sys.platform == 'win32':
@@ -384,6 +393,7 @@ def configure(conf):
     conf.env.prepend_value('CFLAGS', '-I' + os.path.abspath('.'))
     conf.env.prepend_value('CXXFLAGS', '-I' + os.path.abspath('.'))
 
+
 def display_summary(conf, msgs=None):
     if len(conf.stack_path) == 1:
         display_msg(conf, "Install prefix", conf.env['PREFIX'])
@@ -397,6 +407,7 @@ def display_summary(conf, msgs=None):
     if msgs is not None:
         display_msgs(conf, msgs)
 
+
 def set_c_lang(conf, lang):
     "Set a specific C language standard, like 'c99' or 'c11'"
     if conf.env.MSVC_COMPILER:
@@ -407,6 +418,7 @@ def set_c_lang(conf, lang):
         conf.check(cflags=['-Werror', flag],
                    msg="Checking for flag '%s'" % flag)
         conf.env.append_unique('CFLAGS', [flag])
+
 
 def set_cxx_lang(conf, lang):
     "Set a specific C++ language standard, like 'c++11', 'c++14', or 'c++17'"
@@ -419,6 +431,7 @@ def set_cxx_lang(conf, lang):
         conf.check(cxxflags=['-Werror', flag],
                    msg="Checking for flag '%s'" % flag)
         conf.env.append_unique('CXXFLAGS', [flag])
+
 
 def set_modern_c_flags(conf):
     "Use the most modern C language available"
@@ -433,6 +446,7 @@ def set_modern_c_flags(conf):
                     conf.env.append_unique('CFLAGS', [flag])
                     break
 
+
 def set_modern_cxx_flags(conf, mandatory=False):
     "Use the most modern C++ language available"
     if 'COMPILER_CXX' in conf.env:
@@ -445,6 +459,7 @@ def set_modern_cxx_flags(conf, mandatory=False):
                               msg="Checking for flag '%s'" % flag):
                     conf.env.append_unique('CXXFLAGS', [flag])
                     break
+
 
 def set_local_lib(conf, name, has_objects):
     var_name = 'HAVE_' + nameify(name.upper())
@@ -459,11 +474,13 @@ def set_local_lib(conf, name, has_objects):
             conf.env['AUTOWAF_LOCAL_HEADERS'] = {}
         conf.env['AUTOWAF_LOCAL_HEADERS'][name.lower()] = True
 
+
 def append_property(obj, key, val):
     if hasattr(obj, key):
         setattr(obj, key, getattr(obj, key) + val)
     else:
         setattr(obj, key, val)
+
 
 @feature('c', 'cxx')
 @before('apply_link')
@@ -474,6 +491,7 @@ def version_lib(self):
         applicable = ['cshlib', 'cxxshlib', 'cstlib', 'cxxstlib']
         if [x for x in applicable if x in self.features]:
             self.target = self.target + 'D'
+
 
 def set_lib_env(conf,
                 name,
@@ -506,6 +524,7 @@ def set_lib_env(conf,
     conf.run_env.append_unique(lib_path_name, [lib_path])
     conf.define(NAME + '_VERSION', version)
 
+
 def display_msg(conf, msg, status=None, color=None):
     color = 'CYAN'
     if type(status) == bool and status:
@@ -518,17 +537,21 @@ def display_msg(conf, msg, status=None, color=None):
     Logs.pprint('BOLD', ":", sep='')
     Logs.pprint(color, status)
 
+
 def display_msgs(conf, msgs):
     for k, v in msgs.items():
         display_msg(conf, k, v)
+
 
 def link_flags(env, lib):
     return ' '.join(map(lambda x: env['LIB_ST'] % x,
                         env['LIB_' + lib]))
 
+
 def compile_flags(env, lib):
     return ' '.join(map(lambda x: env['CPPPATH_ST'] % x,
                         env['INCLUDES_' + lib]))
+
 
 def build_pc(bld, name, version, version_suffix, libs, subst_dict={}):
     """Build a pkg-config file for a library.
@@ -584,6 +607,7 @@ def build_pc(bld, name, version, version_suffix, libs, subst_dict={}):
 
     obj.__dict__.update(subst_dict)
 
+
 def make_simple_dox(name):
     "Clean up messy Doxygen documentation after it is built"
     name = name.lower()
@@ -625,6 +649,7 @@ def make_simple_dox(name):
     finally:
         os.chdir(top)
 
+
 def build_dox(bld, name, version, srcdir, blddir, outdir='', versioned=True):
     """Build Doxygen API documentation"""
     if not bld.env['DOCS']:
@@ -664,6 +689,7 @@ def build_dox(bld, name, version, srcdir, blddir, outdir='', versioned=True):
                           bld.path.get_bld().ant_glob('doc/man/man%d/*' % i,
                                                       excl='**/_*'))
 
+
 def build_version_files(header_path, source_path, domain, major, minor, micro):
     """Generate version code header"""
     header_path = os.path.abspath(header_path)
@@ -696,6 +722,7 @@ def build_version_files(header_path, source_path, domain, major, minor, micro):
 
     return None
 
+
 def build_i18n_pot(bld, srcdir, dir, name, sources, copyright_holder=None):
     Logs.info('Generating pot file from %s' % name)
     pot_file = '%s.pot' % name
@@ -714,6 +741,7 @@ def build_i18n_pot(bld, srcdir, dir, name, sources, copyright_holder=None):
     Logs.info('Updating ' + pot_file)
     subprocess.call(cmd, cwd=os.path.join(srcdir, dir))
 
+
 def build_i18n_po(bld, srcdir, dir, name, sources, copyright_holder=None):
     pwd = os.getcwd()
     os.chdir(os.path.join(srcdir, dir))
@@ -727,6 +755,7 @@ def build_i18n_po(bld, srcdir, dir, name, sources, copyright_holder=None):
         Logs.info('Updating ' + po_file)
         subprocess.call(cmd)
     os.chdir(pwd)
+
 
 def build_i18n_mo(bld, srcdir, dir, name, sources, copyright_holder=None):
     pwd = os.getcwd()
@@ -744,10 +773,12 @@ def build_i18n_mo(bld, srcdir, dir, name, sources, copyright_holder=None):
         subprocess.call(cmd)
     os.chdir(pwd)
 
+
 def build_i18n(bld, srcdir, dir, name, sources, copyright_holder=None):
     build_i18n_pot(bld, srcdir, dir, name, sources, copyright_holder)
     build_i18n_po(bld, srcdir, dir, name, sources, copyright_holder)
     build_i18n_mo(bld, srcdir, dir, name, sources, copyright_holder)
+
 
 class ExecutionEnvironment:
     """Context that sets system environment variables for program execution"""
@@ -773,6 +804,7 @@ class ExecutionEnvironment:
     def __exit__(self, type, value, traceback):
         os.environ = self.original_environ
 
+
 class RunContext(Build.BuildContext):
     "runs an executable from the build directory"
     cmd = 'run'
@@ -792,6 +824,7 @@ class RunContext(Build.BuildContext):
             else:
                 Logs.error("error: Missing --cmd option for run command")
 
+
 def show_diff(from_lines, to_lines, from_filename, to_filename):
     import difflib
     import sys
@@ -805,6 +838,7 @@ def show_diff(from_lines, to_lines, from_filename, to_filename):
         same = False
 
     return same
+
 
 def test_file_equals(patha, pathb):
     import filecmp
@@ -822,11 +856,13 @@ def test_file_equals(patha, pathb):
         with io.open(pathb, 'rU', encoding='utf-8') as fb:
             return show_diff(fa.readlines(), fb.readlines(), patha, pathb)
 
+
 def bench_time():
     if hasattr(time, 'perf_counter'): # Added in Python 3.3
         return time.perf_counter()
     else:
         return time.time()
+
 
 class TestOutput:
     """Test output that is truthy if result is as expected"""
@@ -840,10 +876,12 @@ class TestOutput:
 
     __nonzero__ = __bool__
 
+
 def is_string(s):
     if sys.version_info[0] < 3:
         return isinstance(s, basestring)
     return isinstance(s, str)
+
 
 class TestScope:
     """Scope for running tests that maintains pass/fail statistics"""
@@ -963,6 +1001,7 @@ class TestScope:
             self.tst.log_good('      OK', name)
 
         return output
+
 
 class TestContext(Build.BuildContext):
     "runs test suite"
@@ -1139,6 +1178,7 @@ class TestContext(Build.BuildContext):
         except Exception:
             Logs.warn('Failed to run lcov to generate coverage report')
 
+
 class TestGroup:
     def __init__(self, tst, suitename, name, **kwargs):
         self.tst = tst
@@ -1178,6 +1218,7 @@ class TestGroup:
             self.tst.log_bad('-' * 10, '%d/%d tests from %s (%d ms total)',
                              n_passed, scope.n_total, self.label(), duration)
 
+
 def run_ldconfig(ctx):
     should_run = (ctx.cmd == 'install' and
                   not ctx.env['RAN_LDCONFIG'] and
@@ -1192,6 +1233,7 @@ def run_ldconfig(ctx):
             ctx.env['RAN_LDCONFIG'] = True
         except Exception:
             pass
+
 
 def run_script(cmds):
     for cmd in cmds:
