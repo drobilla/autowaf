@@ -221,7 +221,7 @@ def check_pkg(conf, spec, **kwargs):
         if found:
             pkg_name += 'D'
 
-        args['mandatory'] = mandatory  # Unsmash mandatory arg
+        args['mandatory'] = kwargs['mandatory']  # Unsmash mandatory arg
 
     if not found:
         found = conf.check_cfg(package=spec,
@@ -858,7 +858,7 @@ def test_file_equals(patha, pathb):
 
 
 def bench_time():
-    if hasattr(time, 'perf_counter'): # Added in Python 3.3
+    if hasattr(time, 'perf_counter'):  # Added in Python 3.3
         return time.perf_counter()
     else:
         return time.time()
@@ -933,7 +933,7 @@ class TestScope:
             with tempfile.TemporaryFile() as stderr:
                 kwargs['stderr'] = stderr
                 output = self.run(test, **kwargs)
-                stderr.seek(0, 2) # Seek to end
+                stderr.seek(0, 2)  # Seek to end
                 return (output if not output else
                         self.run(
                             lambda: stderr.tell() > 0,
