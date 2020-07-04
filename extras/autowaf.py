@@ -202,7 +202,7 @@ def check_pkg(conf, spec, **kwargs):
         return
 
     import re
-    match = re.match('([^ ]*) >= [0-9\.]*', spec)
+    match = re.match(r'([^ ]*) >= [0-9\.]*', spec)
     args = []
     if match:
         name = match.group(1)
@@ -1130,9 +1130,9 @@ class TestContext(Build.BuildContext):
                 stderr=subprocess.STDOUT).decode('ascii')
 
             import re
-            lines = re.search('lines\.*: (.*)%.*', summary).group(1)
-            functions = re.search('functions\.*: (.*)%.*', summary).group(1)
-            branches = re.search('branches\.*: (.*)%.*', summary).group(1)
+            lines = re.search(r'lines\.*: (.*)%.*', summary).group(1)
+            functions = re.search(r'functions\.*: (.*)%.*', summary).group(1)
+            branches = re.search(r'branches\.*: (.*)%.*', summary).group(1)
             self.log_good(
                 'COVERAGE', '%s%% lines, %s%% functions, %s%% branches',
                 lines, functions, branches)
