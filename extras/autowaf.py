@@ -418,36 +418,44 @@ gcc_cxx_warnings = [
 ]
 
 
-def remove_all_warning_flags(conf):
+def remove_all_warning_flags(env):
     """Removes all warning flags except Werror or equivalent"""
-    if 'clang' in conf.env.CC_NAME or 'gcc' in conf.env.CC_NAME:
+    if 'clang' in env.CC_NAME or 'gcc' in env.CC_NAME:
         for var in ['CFLAGS', 'CXXFLAGS']:
-            flags = conf.env[var]
-            conf.env[var] = [f for f in flags
-                             if not (f.startswith('-W') and f != '-Werror')]
-    elif 'msvc' in conf.env.CC_NAME:
+            flags = env[var]
+            env[var] = [f for f in flags
+                        if not (f.startswith('-W') and f != '-Werror')]
+    elif 'msvc' in env.CC_NAME:
         for var in ['CFLAGS', 'CXXFLAGS']:
-            flags = conf.env[var]
-            conf.env[var] = [f for f in flags
+            flags = env[var]
+            env[var] = [f for f in flags
                              if not (f.startswith('/W') and f != '/WX')]
 
 
-def enable_all_warnings(conf):
+def enable_all_warnings(env):
     """Enables all known warnings"""
-    if 'clang' in conf.env.CC_NAME:
-        conf.env.append_unique('CFLAGS', ['-Weverything'])
-        conf.env.append_unique('CXXFLAGS', ['-Weverything'])
-    elif 'gcc' in conf.env.CC_NAME:
-        conf.env.append_unique('CFLAGS', gcc_common_warnings)
-        conf.env.append_unique('CXXFLAGS', gcc_common_warnings)
-        conf.env.append_unique('CFLAGS', gcc_c_warnings)
-        conf.env.append_unique('CXXFLAGS', gcc_cxx_warnings)
-    elif conf.env.MSVC_COMPILER:
-        conf.env.append_unique('CFLAGS', ['/Wall'])
-        conf.env.append_unique('CXXFLAGS', ['/Wall'])
+    if 'clang' in env.CC_NAME:
+        env.append_unique('CFLAGS', ['-Weverything'])
+        env.append_unique('CXXFLAGS', ['-Weverything'])
+    elif 'gcc' in env.CC_NAME:
+        env.append_unique('CFLAGS', gcc_common_warnings)
+        env.append_unique('CXXFLAGS', gcc_common_warnings)
+        env.append_unique('CFLAGS', gcc_c_warnings)
+        env.append_unique('CXXFLAGS', gcc_cxx_warnings)
+    elif env.MSVC_COMPILER:
+        env.append_unique('CFLAGS', ['/Wall'])
+        env.append_unique('CXXFLAGS', ['/Wall'])
     else:
-        Logs.warn('Unknown compiler "%s", not enabling warnings'
-                  % conf.env.CC_NAME)
+        Logs.warn('Unknown compiler "%s", not enabling warnings' % env.CC_NAME)
+
+
+def set_warnings_as_errors(env):
+    if 'clang' in env.CC_NAME or 'gcc' in env.CC_NAME:
+        env.append_unique('CFLAGS', ['-Werror'])
+        env.append_unique('CXXFLAGS', ['-Werror'])
+    elif env.MSVC_COMPILER:
+        env.append_unique('CFLAGS', ['/WX'])
+        env.append_unique('CXXFLAGS', ['/WX'])
 
 
 def configure(conf):
@@ -504,8 +512,8 @@ def configure(conf):
 
     if Options.options.ultra_strict:
         Options.options.strict = True
-        remove_all_warning_flags(conf)
-        enable_all_warnings(conf)
+        remove_all_warning_flags(conf.env)
+        enable_all_warnings(conf.env)
 
     if conf.env.MSVC_COMPILER:
         Options.options.no_coverage = True
