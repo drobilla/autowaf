@@ -175,9 +175,9 @@ def check_function(conf, lang, name, **args):
 typedef %s (*Func)(%s);
 
 int main(void) {
-	static const Func ptr = %s;
+    static const Func ptr = %s;
     (void)ptr;
-	return 0;
+    return 0;
 }
 ''' % (includes, return_type, arg_types, name)
 
