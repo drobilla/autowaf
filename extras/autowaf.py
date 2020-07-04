@@ -213,7 +213,6 @@ def check_pkg(conf, spec, **kwargs):
         Logs.error("Invalid package spec: %s" % spec)
 
     found = None
-    pkg_var_name = 'PKG_' + name.replace('-', '_')
     pkg_name = name
     args += kwargs.get('args', [])
 
