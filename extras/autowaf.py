@@ -142,31 +142,6 @@ class ConfigureContext(Configure.ConfigurationContext):
         """Return `path` within the build directory"""
         return str(self.path.get_bld().make_node(path))
 
-    def add_compiler_flags(self, lang, compiler_to_flags):
-        """Add compiler-specific flags, for example to suppress warnings.
-
-        The lang argument must be "c", "cxx", or "*" for both.
-
-        The compiler_to_flags argument must be a map from compiler name
-        ("clang", "gcc", or "msvc") to a list of command line flags.
-        """
-
-        if lang == "*":
-            self.add_compiler_flags('c', compiler_to_flags)
-            self.add_compiler_flags('cxx', compiler_to_flags)
-        else:
-            if lang == 'c':
-                compiler_name = self.env.CC_NAME
-            elif lang == 'cxx':
-                compiler_name = self.env.CXX_NAME
-            else:
-                raise Exception('Unknown language "%s"' % lang)
-
-            var_name = lang.upper() + 'FLAGS'
-            for name, flags in compiler_to_flags.items():
-                if name in compiler_name:
-                    self.env.append_value(var_name, flags)
-
 
 def get_check_func(conf, lang):
     if lang == 'c':
@@ -460,6 +435,32 @@ def set_warnings_as_errors(env):
     elif env.MSVC_COMPILER:
         env.append_unique('CFLAGS', ['/WX'])
         env.append_unique('CXXFLAGS', ['/WX'])
+
+
+def add_compiler_flags(env, lang, compiler_to_flags):
+    """Add compiler-specific flags, for example to suppress warnings.
+
+    The lang argument must be "c", "cxx", or "*" for both.
+
+    The compiler_to_flags argument must be a map from compiler name
+    ("clang", "gcc", or "msvc") to a list of command line flags.
+    """
+
+    if lang == "*":
+        add_compiler_flags(env, 'c', compiler_to_flags)
+        add_compiler_flags(env, 'cxx', compiler_to_flags)
+    else:
+        if lang == 'c':
+            compiler_name = env.CC_NAME
+        elif lang == 'cxx':
+            compiler_name = env.CXX_NAME
+        else:
+            raise Exception('Unknown language "%s"' % lang)
+
+        var_name = lang.upper() + 'FLAGS'
+        for name, flags in compiler_to_flags.items():
+            if name in compiler_name:
+                env.append_value(var_name, flags)
 
 
 def configure(conf):
