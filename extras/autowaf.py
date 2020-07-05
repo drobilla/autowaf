@@ -268,9 +268,9 @@ def normpath(path):
         return os.path.normpath(path)
 
 
-# GCC warnings common to C and C++
+# Almost all GCC warnings common to C and C++
 gcc_common_warnings = [
-  # '-Waggregate-return',
+  # '-Waggregate-return', # Pretty esoteric, and not in clang
   '-Waggressive-loop-optimizations',
   '-Wall',
   '-Walloc-zero',
@@ -343,7 +343,7 @@ gcc_common_warnings = [
   '-Wsuggest-attribute=pure',
   '-Wswitch-bool',
   '-Wnormalized',
-  '-Wswitch-default',
+  # '-Wswitch-default', # Redundant with Wswitch and not in clang
   '-Wswitch-enum',
   '-Wswitch-unreachable',
   '-Wsync-nand',
@@ -359,6 +359,7 @@ gcc_common_warnings = [
   '-Wwrite-strings',
 ]
 
+# Almost all C-specific GCC warnings, except those for ancient (pre-C99) C
 gcc_c_warnings = [
   '-Wbad-function-cast',
   '-Wc++-compat',
@@ -382,6 +383,7 @@ gcc_c_warnings = [
   # '-Wunsuffixed-float-constants',
 ]
 
+# Almost all C++-specific GCC warnings, except those about common feature use
 gcc_cxx_warnings = [
   '-Wconditionally-supported',
   '-Wconversion-null',
@@ -436,7 +438,9 @@ def enable_all_warnings(env):
     """Enables all known warnings"""
     if 'clang' in env.CC_NAME:
         env.append_unique('CFLAGS', ['-Weverything'])
-        env.append_unique('CXXFLAGS', ['-Weverything'])
+        env.append_unique('CXXFLAGS', ['-Weverything',
+                                       '-Wno-c++98-compat',
+                                       '-Wno-c++98-compat-pedantic'])
     elif 'gcc' in env.CC_NAME:
         env.append_unique('CFLAGS', gcc_common_warnings)
         env.append_unique('CXXFLAGS', gcc_common_warnings)
