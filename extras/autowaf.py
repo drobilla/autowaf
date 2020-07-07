@@ -601,16 +601,21 @@ def display_summary(conf, msgs=None):
         display_msgs(conf, msgs)
 
 
-def set_c_lang(conf, lang):
+def set_c_lang(conf, lang, **kwargs):
     "Set a specific C language standard, like 'c99' or 'c11'"
     if conf.env.MSVC_COMPILER:
         # MSVC has no hope or desire to compile C99, just compile as C++
         conf.env.append_unique('CFLAGS', ['/TP'])
+        return True
     else:
         flag = '-std=%s' % lang
-        conf.check(cflags=['-Werror', flag],
-                   msg="Checking for flag '%s'" % flag)
-        conf.env.append_unique('CFLAGS', [flag])
+        if conf.check(features='c cprogram',
+                      cflags=['-Werror', flag],
+                      msg="Checking for flag '%s'" % flag,
+                      **kwargs):
+            conf.env.append_unique('CFLAGS', [flag])
+            return True
+        return False
 
 
 def set_cxx_lang(conf, lang):
