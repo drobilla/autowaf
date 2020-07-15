@@ -197,6 +197,9 @@ int main(void) {
 
     check_func  = get_check_func(conf, lang)
     args['msg'] = 'Checking for %s' % name
+    if lang + 'flags' not in args:
+        args[lang + 'flags'] = check_flags(conf)
+
     check_func(fragment=fragment, **args)
 
 
@@ -552,11 +555,12 @@ def configure(conf):
             extra_flags = ['-Wlogical-op',
                            '-Wsuggest-attribute=noreturn',
                            '-Wunsafe-loop-optimizations']
-            if conf.check_cc(cflags=['-Werror'] + extra_flags, mandatory=False,
+            if conf.check_cc(cflags=flag_check_flags(conf) + extra_flags,
+                             mandatory=False,
                              msg="Checking for extra C warning flags"):
                 conf.env.append_value('CFLAGS', extra_flags)
             if 'COMPILER_CXX' in conf.env:
-                if conf.check_cxx(cxxflags=['-Werror'] + extra_flags,
+                if conf.check_cxx(cxxflags=flag_check_flags(conf) + extra_flags,
                                   mandatory=False,
                                   msg="Checking for extra C++ warning flags"):
                     conf.env.append_value('CXXFLAGS', extra_flags)
@@ -583,7 +587,9 @@ def configure(conf):
                     if conf.find_program(cov, var='LLVM_COV', mandatory=False):
                         break
             else:
-                conf.check_cc(lib='gcov', define_name='HAVE_GCOV',
+                conf.check_cc(cflags=check_flags(conf),
+                              lib='gcov',
+                              define_name='HAVE_GCOV',
                               mandatory=False)
     except Exception:
         pass  # Test options do not exist
@@ -613,6 +619,23 @@ def display_summary(conf, msgs=None):
         display_msgs(conf, msgs)
 
 
+def check_flags(conf):
+    if conf.env.MSVC_COMPILER:
+        return []
+    elif 'gcc' in conf.env.CC_NAME:
+        return ['-Wno-suggest-attribute=const',
+                '-Wno-suggest-attribute=pure']
+
+    return []
+
+
+def flag_check_flags(conf):
+    if conf.env.MSVC_COMPILER:
+        return ['/WX'] + check_flags(conf)
+    else:
+        return ['-Werror'] + check_flags(conf)
+
+
 def set_c_lang(conf, lang, **kwargs):
     "Set a specific C language standard, like 'c99' or 'c11'"
     if conf.env.MSVC_COMPILER:
@@ -621,8 +644,8 @@ def set_c_lang(conf, lang, **kwargs):
         return True
     else:
         flag = '-std=%s' % lang
-        if conf.check(features='c cprogram',
-                      cflags=['-Werror', flag],
+        if conf.check(features='c cstlib',
+                      cflags=flag_check_flags(conf) + [flag],
                       msg="Checking for flag '%s'" % flag,
                       **kwargs):
             conf.env.append_unique('CFLAGS', [flag])
