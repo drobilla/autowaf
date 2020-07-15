@@ -5,7 +5,7 @@ import sys
 import time
 
 from waflib import Configure, ConfigSet, Build, Context, Logs, Options, Utils
-from waflib.TaskGen import feature, before, after
+from waflib.TaskGen import feature, before, after, after_method
 
 NONEMPTY = -10
 
@@ -25,6 +25,26 @@ else:
 @after('apply_incpaths')
 def include_config_h(self):
     self.env.append_value('INCPATHS', self.bld.bldnode.abspath())
+
+
+def _set_system_headers(self, varname):
+    if 'AUTOWAF_SYSTEM_PKGS' in self.env and not self.env.MSVC_COMPILER:
+        for lib in self.uselib:
+            if lib in self.env.AUTOWAF_SYSTEM_PKGS:
+                for include in self.env['INCLUDES_' + lib]:
+                    self.env.append_unique(varname, ['-isystem%s' % include])
+
+
+@feature('c')
+@after_method('apply_incpaths')
+def set_system_headers_c(self):
+    _set_system_headers(self, 'CFLAGS')
+
+
+@feature('cxx')
+@after_method('apply_incpaths')
+def set_system_headers_cxx(self):
+    _set_system_headers(self, 'CXXFLAGS')
 
 
 class OptionsContext(Options.OptionsContext):
@@ -115,7 +135,6 @@ class ConfigureContext(Configure.ConfigurationContext):
 
         super(ConfigureContext, self).__init__(**kwargs)
         self.run_env = ConfigSet.ConfigSet()
-        self.system_include_paths = set()
 
     def pre_recurse(self, node):
         if len(self.stack_path) == 1:
@@ -124,12 +143,6 @@ class ConfigureContext(Configure.ConfigurationContext):
 
     def store(self):
         self.env.AUTOWAF_RUN_ENV = self.run_env.get_merged_dict()
-        for path in sorted(self.system_include_paths):
-            if 'COMPILER_CC' in self.env:
-                self.env.append_value('CFLAGS', ['-isystem', path])
-            if 'COMPILER_CXX' in self.env:
-                self.env.append_value('CXXFLAGS', ['-isystem', path])
-
         super(ConfigureContext, self).store()
 
     def check_pkg(self, *args, **kwargs):
@@ -232,8 +245,7 @@ def check_pkg(conf, spec, **kwargs):
                                **kwargs)
 
     if not conf.env.MSVC_COMPILER and 'system' in kwargs and kwargs['system']:
-        conf.system_include_paths.update(
-            conf.env['INCLUDES_' + nameify(uselib_store)])
+        conf.env.append_unique('AUTOWAF_SYSTEM_PKGS', uselib_store)
 
 
 def normpath(path):
