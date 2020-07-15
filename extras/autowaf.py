@@ -534,6 +534,10 @@ def configure(conf):
         Options.options.strict = True
         remove_all_warning_flags(conf.env)
         enable_all_warnings(conf.env)
+        if Options.options.werror and 'clang' in conf.env.CC_NAME:
+            conf.env.append_unique('CFLAGS', '-Wno-unknown-warning-option')
+        if Options.options.werror and 'clang' in conf.env.CXX_NAME:
+            conf.env.append_unique('CXXFLAGS', '-Wno-unknown-warning-option')
 
     if conf.env.MSVC_COMPILER:
         Options.options.no_coverage = True
