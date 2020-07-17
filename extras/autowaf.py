@@ -412,44 +412,62 @@ gcc_cxx_warnings = [
 
 def remove_all_warning_flags(env):
     """Removes all warning flags except Werror or equivalent"""
-    if 'clang' in env.CC_NAME or 'gcc' in env.CC_NAME:
-        for var in ['CFLAGS', 'CXXFLAGS']:
-            flags = env[var]
-            env[var] = [f for f in flags
-                        if not (f.startswith('-W') and f != '-Werror')]
-    elif 'msvc' in env.CC_NAME:
-        for var in ['CFLAGS', 'CXXFLAGS']:
-            flags = env[var]
-            env[var] = [f for f in flags
+    if 'CC' in env:
+        if 'clang' in env.CC_NAME or 'gcc' in env.CC_NAME:
+            env['CFLAGS'] = [f for f in env['CFLAGS']
+                             if not (f.startswith('-W') and f != '-Werror')]
+        elif 'msvc' in env.CC_NAME:
+            env['CFLAGS'] = [f for f in env['CFLAGS']
                              if not (f.startswith('/W') and f != '/WX')]
+
+    if 'CXX' in env:
+        if 'clang' in env.CXX_NAME or 'gcc' in env.CXX_NAME:
+            env['CXXFLAGS'] = [f for f in env['CXXFLAGS']
+                               if not (f.startswith('-W') and f != '-Werror')]
+        elif 'msvc' in env.CXX_NAME:
+            env['CXXFLAGS'] = [f for f in env['CXXFLAGS']
+                               if not (f.startswith('/W') and f != '/WX')]
 
 
 def enable_all_warnings(env):
     """Enables all known warnings"""
-    if 'clang' in env.CC_NAME:
-        env.append_unique('CFLAGS', ['-Weverything'])
-        env.append_unique('CXXFLAGS', ['-Weverything',
-                                       '-Wno-c++98-compat',
-                                       '-Wno-c++98-compat-pedantic'])
-    elif 'gcc' in env.CC_NAME:
-        env.append_unique('CFLAGS', gcc_common_warnings)
-        env.append_unique('CXXFLAGS', gcc_common_warnings)
-        env.append_unique('CFLAGS', gcc_c_warnings)
-        env.append_unique('CXXFLAGS', gcc_cxx_warnings)
-    elif env.MSVC_COMPILER:
-        env.append_unique('CFLAGS', ['/Wall'])
-        env.append_unique('CXXFLAGS', ['/Wall'])
-    else:
-        Logs.warn('Unknown compiler "%s", not enabling warnings' % env.CC_NAME)
+    if 'CC' in env:
+        if 'clang' in env.CC_NAME:
+            env.append_unique('CFLAGS', ['-Weverything'])
+        elif 'gcc' in env.CC_NAME:
+            env.append_unique('CFLAGS', gcc_common_warnings)
+            env.append_unique('CFLAGS', gcc_c_warnings)
+        elif env.MSVC_COMPILER:
+            env.append_unique('CFLAGS', ['/Wall'])
+        else:
+            Logs.warn('Unknown compiler "%s", not enabling warnings' % env.CC_NAME)
+
+    if 'CXX' in env:
+        if 'clang' in env.CXX_NAME:
+            env.append_unique('CXXFLAGS', ['-Weverything',
+                                           '-Wno-c++98-compat',
+                                           '-Wno-c++98-compat-pedantic'])
+        elif 'gcc' in env.CXX_NAME:
+            env.append_unique('CXXFLAGS', gcc_common_warnings)
+            env.append_unique('CXXFLAGS', gcc_cxx_warnings)
+        elif env.MSVC_COMPILER:
+            env.append_unique('CXXFLAGS', ['/Wall'])
+        else:
+            Logs.warn('Unknown compiler "%s", not enabling warnings' % env.CXX_NAME)
 
 
 def set_warnings_as_errors(env):
-    if 'clang' in env.CC_NAME or 'gcc' in env.CC_NAME:
-        env.append_unique('CFLAGS', ['-Werror'])
-        env.append_unique('CXXFLAGS', ['-Werror'])
-    elif env.MSVC_COMPILER:
-        env.append_unique('CFLAGS', ['/WX'])
-        env.append_unique('CXXFLAGS', ['/WX'])
+    if 'CC' in env:
+        if 'clang' in env.CC_NAME or 'gcc' in env.CC_NAME:
+            env.append_unique('CFLAGS', ['-Werror'])
+        elif env.MSVC_COMPILER:
+            env.append_unique('CFLAGS', ['/WX'])
+
+    if 'CXX' in env:
+        if 'clang' in env.CXX_NAME or 'gcc' in env.CXX_NAME:
+            env.append_unique('CXXFLAGS', ['-Werror'])
+        elif env.MSVC_COMPILER:
+            env.append_unique('CXXFLAGS', ['/WX'])
 
 
 def add_compiler_flags(env, lang, compiler_to_flags):
@@ -591,10 +609,12 @@ def configure(conf):
                     if conf.find_program(cov, var='LLVM_COV', mandatory=False):
                         break
             else:
-                conf.check_cc(cflags=check_flags(conf),
-                              lib='gcov',
-                              define_name='HAVE_GCOV',
-                              mandatory=False)
+                check_func = (conf.check_cc if 'CC' in conf.env
+                              else conf.check_cxx)
+                check_func(cflags=check_flags(conf),
+                           lib='gcov',
+                           define_name='HAVE_GCOV',
+                           mandatory=False)
     except Exception:
         pass  # Test options do not exist
 
