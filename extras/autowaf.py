@@ -685,7 +685,7 @@ def set_cxx_lang(conf, lang):
         conf.env.append_unique('CXXFLAGS', ['/std:%s' % lang])
     else:
         flag = '-std=%s' % lang
-        conf.check(cxxflags=['-Werror', flag],
+        conf.check(cxxflags=flag_check_flags(conf) + [flag],
                    msg="Checking for flag '%s'" % flag)
         conf.env.append_unique('CXXFLAGS', [flag])
 
