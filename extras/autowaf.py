@@ -570,8 +570,6 @@ def configure(conf):
     elif Options.options.strict:
         if conf.env.DEST_OS != "darwin":
             conf.env.append_value('LINKFLAGS', ['-Wl,--no-undefined'])
-            conf.env.append_value('CFLAGS', ['-fstrict-overflow'])
-            conf.env.append_value('CXXFLAGS', ['-fstrict-overflow'])
 
             # Add less universal flags after checking they work
             extra_flags = ['-Wlogical-op',
