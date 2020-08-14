@@ -62,7 +62,7 @@ class OptionsContext(Options.OptionsContext):
                              dest=name.replace('-', '_'), help=desc)
 
 
-def set_options(opt, debug_by_default=False):
+def set_options(opt):
     "Add standard autowaf options"
     opts = opt.get_option_group('Configuration options')
 
@@ -83,15 +83,11 @@ def set_options(opt, debug_by_default=False):
                     help="HTML documentation [default: DATADIR/doc]")
 
     # Build options
-    if debug_by_default:
-        opts.add_option('--optimize', action='store_false', default=True,
-                        dest='debug', help="build optimized binaries")
-    else:
-        opts.add_option('-d', '--debug', action='store_true', default=False,
-                        dest='debug', help="build debuggable binaries")
-        opts.add_option('--pardebug', action='store_true', default=False,
-                        dest='pardebug',
-                        help="build debug libraries with D suffix")
+    opts.add_option('-d', '--debug', action='store_true', default=False,
+                    dest='debug', help="build debuggable binaries")
+    opts.add_option('--pardebug', action='store_true', default=False,
+                    dest='pardebug',
+                    help="build debug libraries with D suffix")
 
     opts.add_option('-s', '--strict', action='store_true', default=False,
                     dest='strict',
