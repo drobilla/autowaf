@@ -539,10 +539,17 @@ def configure(conf):
             conf.env['CFLAGS']   = ['-O0', '-g']
             conf.env['CXXFLAGS'] = ['-O0', '-g']
     else:
-        if conf.env['MSVC_COMPILER']:
-            append_cxx_flags(['/MD', '/FS', '/DNDEBUG'])
-        else:
-            append_cxx_flags(['-DNDEBUG'])
+        if 'CFLAGS' not in os.environ:
+            if conf.env['MSVC_COMPILER']:
+                conf.env.append_unique('CFLAGS', ['/O2', '/DNDEBUG'])
+            else:
+                conf.env.append_unique('CFLAGS', ['-O2', '-DNDEBUG'])
+
+        if 'CXXFLAGS' not in os.environ:
+            if conf.env['MSVC_COMPILER']:
+                conf.env.append_unique('CXXFLAGS', ['/O2', '/DNDEBUG'])
+            else:
+                conf.env.append_unique('CXXFLAGS', ['-O2', '-DNDEBUG'])
 
     if Options.options.ultra_strict:
         Options.options.strict = True
