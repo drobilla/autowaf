@@ -626,9 +626,6 @@ def configure(conf):
     conf.define(defname + '_VERSION', version)
     conf.env[defname + '_VERSION'] = version
 
-    conf.env.prepend_value('CFLAGS', '-I' + os.path.abspath('.'))
-    conf.env.prepend_value('CXXFLAGS', '-I' + os.path.abspath('.'))
-
 
 def display_summary(conf, msgs=None):
     if len(conf.stack_path) == 1:
