@@ -612,10 +612,10 @@ def configure(conf):
             else:
                 check_func = (conf.check_cc if 'CC' in conf.env
                               else conf.check_cxx)
-                check_func(cflags=check_flags(conf),
-                           lib='gcov',
-                           define_name='HAVE_GCOV',
-                           mandatory=False)
+                if check_func(cflags=check_flags(conf),
+                              lib='gcov',
+                              mandatory=False):
+                    conf.env.HAVE_GCOV = True
     except Exception:
         pass  # Test options do not exist
 
