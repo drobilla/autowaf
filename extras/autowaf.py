@@ -612,12 +612,16 @@ def configure(conf):
                     if conf.find_program(cov, var='LLVM_COV', mandatory=False):
                         break
             else:
-                check_func = (conf.check_cc if 'CC' in conf.env
-                              else conf.check_cxx)
-                if check_func(cflags=check_flags(conf),
-                              lib='gcov',
-                              mandatory=False):
-                    conf.env.HAVE_GCOV = True
+                if 'CC' in conf.env:
+                    if check_cc(cflags=check_flags(conf, conf.env.CFLAGS),
+                                lib='gcov',
+                                mandatory=False):
+                        conf.env.HAVE_GCOV = True
+                else:
+                    if check_cxx(cflags=check_flags(conf, conf.env.CXXFLAGS),
+                                 lib='gcov',
+                                 mandatory=False):
+                        conf.env.HAVE_GCOV = True
     except Exception:
         pass  # Test options do not exist
 
