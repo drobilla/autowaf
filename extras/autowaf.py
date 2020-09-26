@@ -1019,7 +1019,7 @@ class ExecutionEnvironment:
         os.environ.update(self.diff)
 
     def __str__(self):
-        return '\n'.join({'%s="%s"' % (k, v) for k, v in self.diff.items()})
+        return '\n'.join(['%s="%s"' % (k, v) for k, v in self.diff.items()])
 
     def __enter__(self):
         return self
