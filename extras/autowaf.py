@@ -194,7 +194,7 @@ int main(void) {
     check_func  = get_check_func(conf, lang)
     args['msg'] = 'Checking for %s' % name
     if lang + 'flags' not in args:
-        args[lang + 'flags'] = check_flags(conf)
+        args[lang + 'flags'] = check_flags(conf, conf.env.CFLAGS)
 
     check_func(fragment=fragment, **args)
 
