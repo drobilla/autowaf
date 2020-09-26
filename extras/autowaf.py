@@ -578,12 +578,14 @@ def configure(conf):
             extra_flags = ['-Wlogical-op',
                            '-Wsuggest-attribute=noreturn',
                            '-Wunsafe-loop-optimizations']
-            if conf.check_cc(cflags=flag_check_flags(conf) + extra_flags,
+            cflags = flag_check_flags(conf, conf.env.CFLAGS) + extra_flags
+            if conf.check_cc(cflags=cflags,
                              mandatory=False,
                              msg="Checking for extra C warning flags"):
                 conf.env.append_value('CFLAGS', extra_flags)
             if 'COMPILER_CXX' in conf.env:
-                if conf.check_cxx(cxxflags=flag_check_flags(conf) + extra_flags,
+                cxxflags = flag_check_flags(conf, conf.env.CXXFLAGS) + extra_flags
+                if conf.check_cxx(cxxflags=cxxflags,
                                   mandatory=False,
                                   msg="Checking for extra C++ warning flags"):
                     conf.env.append_value('CXXFLAGS', extra_flags)
@@ -641,21 +643,25 @@ def display_summary(conf, msgs=None):
         display_msgs(conf, msgs)
 
 
-def check_flags(conf):
+def check_flags(conf, flags):
     if conf.env.MSVC_COMPILER:
         return []
-    elif 'gcc' in conf.env.CC_NAME:
-        return ['-Wno-suggest-attribute=const',
-                '-Wno-suggest-attribute=pure']
 
-    return []
+    # Disable silly attribute warnings that trigger in the generated check code
+    result = []
+    if '-Wsuggest-attribute=const' in flags:
+        result += ['-Wno-suggest-attribute=const']
+    if '-Wsuggest-attribute=pure' in flags:
+        result += ['-Wno-suggest-attribute=pure']
+
+    return result
 
 
-def flag_check_flags(conf):
+def flag_check_flags(conf, flags):
     if conf.env.MSVC_COMPILER:
-        return ['/WX'] + check_flags(conf)
+        return ['/WX'] + check_flags(conf, flags)
     else:
-        return ['-Werror'] + check_flags(conf)
+        return ['-Werror'] + check_flags(conf, flags)
 
 
 def set_c_lang(conf, lang, **kwargs):
@@ -667,7 +673,7 @@ def set_c_lang(conf, lang, **kwargs):
     else:
         flag = '-std=%s' % lang
         if conf.check(features='c cstlib',
-                      cflags=flag_check_flags(conf) + [flag],
+                      cflags=flag_check_flags(conf, conf.env.CFLAGS) + [flag],
                       msg="Checking for flag '%s'" % flag,
                       **kwargs):
             conf.env.append_unique('CFLAGS', [flag])
@@ -683,7 +689,7 @@ def set_cxx_lang(conf, lang):
         conf.env.append_unique('CXXFLAGS', ['/std:%s' % lang])
     else:
         flag = '-std=%s' % lang
-        conf.check(cxxflags=flag_check_flags(conf) + [flag],
+        conf.check(cxxflags=flag_check_flags(conf, conf.env.CXXFLAGS) + [flag],
                    msg="Checking for flag '%s'" % flag)
         conf.env.append_unique('CXXFLAGS', [flag])
 
