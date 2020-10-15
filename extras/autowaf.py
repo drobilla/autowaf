@@ -613,14 +613,16 @@ def configure(conf):
                         break
             else:
                 if 'CC' in conf.env:
-                    if check_cc(cflags=check_flags(conf, conf.env.CFLAGS),
+                    if conf.check_cc(cflags=check_flags(conf, conf.env.CFLAGS),
                                 lib='gcov',
-                                mandatory=False):
+                                mandatory=False,
+                                uselib_store='GCOV'):
                         conf.env.HAVE_GCOV = True
                 else:
-                    if check_cxx(cflags=check_flags(conf, conf.env.CXXFLAGS),
+                    if conf.check_cxx(cflags=check_flags(conf, conf.env.CXXFLAGS),
                                  lib='gcov',
-                                 mandatory=False):
+                                 mandatory=False,
+                                 uselib_store='GCOV'):
                         conf.env.HAVE_GCOV = True
     except Exception as e:
         Logs.error("error: %s" % e)
