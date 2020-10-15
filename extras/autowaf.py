@@ -622,8 +622,8 @@ def configure(conf):
                                  lib='gcov',
                                  mandatory=False):
                         conf.env.HAVE_GCOV = True
-    except Exception:
-        pass  # Test options do not exist
+    except Exception as e:
+        Logs.error("error: %s" % e)
 
     # Define version in configuration
     appname = getattr(Context.g_module, Context.APPNAME, 'noname')
@@ -1362,8 +1362,8 @@ class TestContext(Build.BuildContext):
                 subprocess.call(['lcov', '-z', '-d', str(self.path)],
                                 stdout=log, stderr=log)
 
-        except Exception:
-            Logs.warn('Failed to run lcov to clear old coverage data')
+        except Exception as e:
+            Logs.warn('Failed to run lcov to clear old coverage data (%s)' % e)
 
     def gen_coverage(self):
         """Generate coverage data and report"""
@@ -1400,8 +1400,8 @@ class TestContext(Build.BuildContext):
                 'COVERAGE', '%s%% lines, %s%% functions, %s%% branches',
                 lines, functions, branches)
 
-        except Exception:
-            Logs.warn('Failed to run lcov to generate coverage report')
+        except Exception as e:
+            Logs.warn('Failed to run lcov to generate coverage report (%s)')
 
 
 class TestGroup:
