@@ -108,9 +108,6 @@ def set_options(opt):
         opts.add_option('--no-coverage', action='store_true',
                         dest='no_coverage',
                         help='do not instrument code for test coverage')
-        test_opts.add_option('--wrapper', type='string',
-                             dest='test_wrapper',
-                             help='command prefix for tests (e.g. valgrind)')
         test_opts.add_option('--test-filter', type='string',
                              dest='test_filter',
                              help='regular expression for tests to run')
@@ -119,6 +116,9 @@ def set_options(opt):
     run_opts = opt.add_option_group('Run options')
     run_opts.add_option('--cmd', type='string', dest='cmd',
                         help='command to run from build directory')
+    run_opts.add_option('--wrapper', type='string',
+                        dest='wrapper',
+                        help='command prefix for running executables')
 
 
 class ConfigureContext(Configure.ConfigurationContext):
