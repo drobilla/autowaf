@@ -624,6 +624,8 @@ def configure(conf):
                                  mandatory=False,
                                  uselib_store='GCOV'):
                         conf.env.HAVE_GCOV = True
+    except AttributeError:
+        pass # Test options do not exist
     except Exception as e:
         Logs.error("error: %s" % e)
 
