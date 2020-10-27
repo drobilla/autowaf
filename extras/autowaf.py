@@ -1198,9 +1198,9 @@ class TestScope:
         if verbosity > 1:
             self.tst.log_good('RUN     ', name)
 
-        if Options.options.test_wrapper:
+        if Options.options.wrapper:
             import shlex
-            test = shlex.split(Options.options.test_wrapper) + test
+            test = shlex.split(Options.options.wrapper) + test
 
         output = TestOutput(expected)
         with open(os.devnull, 'wb') as null:
