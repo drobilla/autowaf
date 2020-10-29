@@ -877,7 +877,14 @@ def build_pc(bld, name, version, version_suffix, libs, subst_dict={}):
     obj.__dict__.update(subst_dict)
 
 
-def build_dox(bld, name, version, srcdir, blddir, outdir='', versioned=True):
+def build_dox(bld,
+              name,
+              version,
+              srcdir,
+              blddir,
+              outdir='',
+              versioned=True,
+              install_man=True):
     """Build Doxygen API documentation"""
     if not bld.env['DOCS']:
         return
@@ -911,10 +918,13 @@ def build_dox(bld, name, version, srcdir, blddir, outdir='', versioned=True):
     bld.install_files(
         os.path.join('${DOCDIR}', outname, outdir, 'html'),
         bld.path.get_bld().ant_glob('doc/html/*'))
-    for i in range(1, 8):
-        bld.install_files('${MANDIR}/man%d' % i,
-                          bld.path.get_bld().ant_glob('doc/man/man%d/*' % i,
-                                                      excl='**/_*'))
+
+    if install_man:
+        for i in range(1, 8):
+            bld.install_files(
+                '${MANDIR}/man%d' % i,
+                bld.path.get_bld().ant_glob('doc/man/man%d/*' % i,
+                                            excl='**/_*'))
 
 
 def build_version_files(header_path, source_path, domain, major, minor, micro):
