@@ -826,10 +826,17 @@ def build_pc(bld, name, version, version_suffix, libs, subst_dict={}):
     """Build a pkg-config file for a library.
 
     name           -- uppercase variable name     (e.g. 'SOMENAME')
+                      or path to template without .pc.in extension
     version        -- version string              (e.g. '1.2.3')
     version_suffix -- name version suffix         (e.g. '2')
     libs           -- string/list of dependencies (e.g. 'LIBFOO GLIB')
     """
+
+    if '/' in name:
+        source = '%s.pc.in' % name.lower()
+        name = os.path.basename(name)
+    else:
+        source = '%s.pc.in' % name.lower()
 
     pkg_prefix       = bld.env['PREFIX']
     if len(pkg_prefix) > 1 and pkg_prefix[-1] == '/':
@@ -853,7 +860,7 @@ def build_pc(bld, name, version, version_suffix, libs, subst_dict={}):
         includedir = includedir.replace(pkg_prefix, '${prefix}')
 
     obj = bld(features='subst',
-              source='%s.pc.in' % name.lower(),
+              source=source,
               target=target,
               install_path=os.path.join(bld.env['LIBDIR'], 'pkgconfig'),
               exec_prefix='${prefix}',
