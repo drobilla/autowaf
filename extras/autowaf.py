@@ -572,7 +572,14 @@ def configure(conf):
         conf.env.append_value('LINKFLAGS', '/nologo')
     elif Options.options.strict:
         if conf.env.DEST_OS != "darwin":
-            conf.env.append_value('LINKFLAGS', ['-Wl,--no-undefined'])
+            sanitizing = False
+            for f in conf.env.LINKFLAGS:
+                if f.startswith('-fsanitize'):
+                    sanitizing = True
+                    break;
+
+            if not sanitizing:
+                conf.env.append_value('LINKFLAGS', ['-Wl,--no-undefined'])
 
             # Add less universal flags after checking they work
             extra_flags = ['-Wlogical-op',
