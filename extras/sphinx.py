@@ -27,7 +27,6 @@ from waflib.TaskGen import feature, after_method
 def configure(cnf):
     """Check if sphinx-build program is available and loads gnu_dirs tool."""
     cnf.find_program('sphinx-build', var='SPHINX_BUILD', mandatory=False)
-    cnf.load('gnu_dirs')
 
 
 @feature('sphinx')
