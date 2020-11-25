@@ -18,13 +18,13 @@ else:
 	import imp
 
 # the following 3 constants are updated on each new release (do not touch)
-HEXVERSION=0x2001300
+HEXVERSION=0x2001500
 """Constant updated on new releases"""
 
-WAFVERSION="2.0.19"
+WAFVERSION="2.0.21"
 """Constant updated on new releases"""
 
-WAFREVISION="e83405712e95b47c040763fdfa468c04dfe72e4b"
+WAFREVISION="edde20a6425a5c3eb6b47d5f3f5c4fbc93fed5f4"
 """Git revision when the waf version is updated"""
 
 WAFNAME="waf"
@@ -530,7 +530,7 @@ class Context(ctx):
 		"""
 		Prints a configuration message of the form ``msg: result``.
 		The second part of the message will be in colors. The output
-		can be disabled easly by setting ``in_msg`` to a positive value::
+		can be disabled easily by setting ``in_msg`` to a positive value::
 
 			def configure(conf):
 				self.in_msg = 1

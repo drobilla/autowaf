@@ -99,7 +99,13 @@ all_icl_platforms = [ ('intel64', 'amd64'), ('em64t', 'amd64'), ('ia32', 'x86'),
 """List of icl platforms"""
 
 def options(opt):
-	opt.add_option('--msvc_version', type='string', help = 'msvc version, eg: "msvc 10.0,msvc 9.0"', default='')
+	default_ver = ''
+	vsver = os.getenv('VSCMD_VER')
+	if vsver:
+		m = re.match(r'(^\d+\.\d+).*', vsver)
+		if m:
+			default_ver = 'msvc %s' % m.group(1)
+	opt.add_option('--msvc_version', type='string', help = 'msvc version, eg: "msvc 10.0,msvc 9.0"', default=default_ver)
 	opt.add_option('--msvc_targets', type='string', help = 'msvc targets, eg: "x64,arm"', default='')
 	opt.add_option('--no-msvc-lazy', action='store_false', help = 'lazily check msvc target environments', default=True, dest='msvc_lazy')
 
@@ -723,10 +729,6 @@ def libname_msvc(self, libname, is_static=False):
 		_libpaths = self.env.LIBPATH
 
 	static_libs=[
-		'lib%ss.a' % lib,
-		'lib%s.a' % lib,
-		'%ss.a' % lib,
-		'%s.a' %lib,
 		'lib%ss.lib' % lib,
 		'lib%s.lib' % lib,
 		'%ss.lib' % lib,
@@ -926,7 +928,7 @@ def msvc_common_flags(conf):
 
 	v.LIB_ST            = '%s.lib'
 	v.LIBPATH_ST        = '/LIBPATH:%s'
-	v.STLIB_ST          = '%s.a'
+	v.STLIB_ST          = '%s.lib'
 	v.STLIBPATH_ST      = '/LIBPATH:%s'
 
 	if v.MSVC_MANIFEST:
@@ -940,7 +942,7 @@ def msvc_common_flags(conf):
 	v.IMPLIB_ST         = '/IMPLIB:%s'
 
 	v.LINKFLAGS_cstlib  = []
-	v.cstlib_PATTERN    = v.cxxstlib_PATTERN = '%s.a'
+	v.cstlib_PATTERN    = v.cxxstlib_PATTERN = '%s.lib'
 
 	v.cprogram_PATTERN  = v.cxxprogram_PATTERN = '%s.exe'
 
