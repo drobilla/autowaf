@@ -551,6 +551,10 @@ def configure(conf):
             else:
                 conf.env.append_unique('CXXFLAGS', ['-O2', '-DNDEBUG'])
 
+    if conf.env['MSVC_COMPILER']:
+        conf.env['CFLAGS']   += ['/MD']
+        conf.env['CXXFLAGS'] += ['/MD']
+
     if Options.options.ultra_strict:
         Options.options.strict = True
         remove_all_warning_flags(conf.env)
