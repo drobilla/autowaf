@@ -689,7 +689,7 @@ def set_c_lang(conf, lang, **kwargs):
         # MSVC has no hope or desire to compile C99, just compile as C++
         conf.env.append_unique('CFLAGS', ['/TP'])
         return True
-    else:
+    elif not (lang == 'c99' and '-std=c11' in conf.env.CFLAGS):
         flag = '-std=%s' % lang
         if conf.check(features='c cstlib',
                       cflags=flag_check_flags(conf, conf.env.CFLAGS) + [flag],
