@@ -429,7 +429,10 @@ def enable_all_warnings(env):
     """Enables all known warnings"""
     if 'CC' in env:
         if 'clang' in env.CC_NAME:
-            env.append_unique('CFLAGS', ['-Weverything'])
+            env.append_unique('CFLAGS', [
+                '-Weverything',
+                '-Wno-poison-system-directories',
+            ])
         elif 'gcc' in env.CC_NAME:
             env.append_unique('CFLAGS', gcc_common_warnings)
             env.append_unique('CFLAGS', gcc_c_warnings)
@@ -440,9 +443,12 @@ def enable_all_warnings(env):
 
     if 'CXX' in env:
         if 'clang' in env.CXX_NAME:
-            env.append_unique('CXXFLAGS', ['-Weverything',
-                                           '-Wno-c++98-compat',
-                                           '-Wno-c++98-compat-pedantic'])
+            env.append_unique('CXXFLAGS', [
+                '-Weverything',
+                '-Wno-c++98-compat',
+                '-Wno-c++98-compat-pedantic',
+                '-Wno-poison-system-directories',
+            ])
         elif 'gcc' in env.CXX_NAME:
             env.append_unique('CXXFLAGS', gcc_common_warnings)
             env.append_unique('CXXFLAGS', gcc_cxx_warnings)
